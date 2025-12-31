@@ -1,0 +1,85 @@
+
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../supabaseClient';
+import PropertyCard from '../components/PropertyCard';
+
+const PropertiesPage = ({ operationType }) => {
+    const [properties, setProperties] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [title, setTitle] = useState('');
+
+    useEffect(() => {
+        const fetchProperties = async () => {
+            setLoading(true);
+            try {
+                // First get the operation ID
+                const { data: opData, error: opError } = await supabase
+                    .from('tipos_operacion')
+                    .select('id, nombre')
+                    .ilike('nombre', operationType) // Case insensitive match
+                    .single();
+
+                if (opError) throw opError;
+                if (!opData) throw new Error('Operation type not found');
+
+                setTitle(opData.nombre);
+
+                // Then fetch properties with that operation ID
+                const { data, error } = await supabase
+                    .from('propiedades')
+                    .select(`
+                        *,
+                        propiedades_imagenes (
+                            url,
+                            es_portada
+                        ),
+                        tipos_propiedad (
+                            id,
+                            nombre
+                        ),
+                        tipos_operacion (
+                            id,
+                            nombre
+                        )
+                    `)
+                    .eq('estado', 'publicada')
+                    .eq('operacion_id', opData.id);
+
+                if (error) throw error;
+                setProperties(data);
+            } catch (error) {
+                console.error('Error fetching properties:', error.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProperties();
+    }, [operationType]);
+
+    return (
+        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+                <h1 className="text-3xl font-extrabold text-gray-900 mb-8">
+                    Propiedades en {title || operationType}
+                </h1>
+
+                {loading ? (
+                    <div className="text-center py-12">Cargando propiedades...</div>
+                ) : properties.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                        No hay propiedades disponibles en esta categoría por el momento.
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {properties.map((property) => (
+                            <PropertyCard key={property.id} property={property} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default PropertiesPage;
