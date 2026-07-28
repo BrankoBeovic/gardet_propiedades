@@ -15,26 +15,14 @@ import {
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
-import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
-import { useGoogleMaps } from '../components/GoogleMapsProvider';
-
-const mapContainerStyle = {
-    width: '100%',
-    height: '400px',
-    borderRadius: '12px'
-};
+// Google Maps desactivado temporalmente
 
 const PropertyDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { isLoaded: mapsLoaded } = useGoogleMaps();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
-    const [location, setLocation] = useState(null);
-    const [showInfoWindow, setShowInfoWindow] = useState(true);
-    const [needsGeocoding, setNeedsGeocoding] = useState(false);
-    const [geocodingDone, setGeocodingDone] = useState(false);
 
     useEffect(() => {
         const fetchProperty = async () => {
@@ -73,31 +61,7 @@ const PropertyDetail = () => {
 
                 setProperty(data);
 
-                // Try to get location - first try RPC, then fallback to geocoding
-                let locationFound = false;
-
-                // Method 1: Try RPC if available
-                try {
-                    const { data: locationData, error: locError } = await supabase
-                        .rpc('get_property_with_location', { property_id: parseInt(id) });
-
-                    if (!locError && locationData && locationData.length > 0 &&
-                        locationData[0].ubicacion_lat && locationData[0].ubicacion_lng) {
-                        setLocation({
-                            lat: locationData[0].ubicacion_lat,
-                            lng: locationData[0].ubicacion_lng
-                        });
-                        locationFound = true;
-                        console.log('Location obtained from RPC');
-                    }
-                } catch (rpcError) {
-                    console.log('RPC not available, will try geocoding');
-                }
-
-                // Method 2: Mark that we need geocoding when maps loads
-                if (!locationFound && data.direccion_referencial) {
-                    setNeedsGeocoding(true);
-                }
+                // Ubicación desactivada temporalmente (Google Maps stand-by)
 
             } catch (error) {
                 console.error('Error fetching property:', error.message);
@@ -109,49 +73,19 @@ const PropertyDetail = () => {
         fetchProperty();
     }, [id]);
 
-    // Geocoding effect - runs when maps is loaded and we need geocoding
-    useEffect(() => {
-        if (mapsLoaded && needsGeocoding && !location && !geocodingDone && property?.direccion_referencial) {
-            const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode(
-                { address: property.direccion_referencial },
-                (results, status) => {
-                    if (status === 'OK' && results[0]) {
-                        const loc = results[0].geometry.location;
-                        setLocation({
-                            lat: loc.lat(),
-                            lng: loc.lng()
-                        });
-                        console.log('Location obtained from Geocoding');
-                    }
-                    setGeocodingDone(true);
-                }
-            );
-        }
-    }, [mapsLoaded, needsGeocoding, location, geocodingDone, property]);
-
     const getEstadoBadgeColor = (estado) => {
         switch (estado) {
             case 'publicada':
-                return 'bg-green-100 text-green-800 border-green-200';
+                return 'bg-green-500/20 text-green-400 border-green-500/30';
             case 'vendida':
-                return 'bg-blue-100 text-blue-800 border-blue-200';
+                return 'bg-gold/20 text-gold border-gold/30';
             case 'arrendada':
-                return 'bg-purple-100 text-purple-800 border-purple-200';
+                return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
             case 'borrador':
-                return 'bg-gray-100 text-gray-800 border-gray-200';
+                return 'bg-ivory/10 text-ivory/50 border-ivory/20';
             default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
+                return 'bg-ivory/10 text-ivory/50 border-ivory/20';
         }
-    };
-
-    const getOperacionBadgeColor = (operacion) => {
-        if (operacion?.toLowerCase().includes('venta')) {
-            return 'bg-orange-500 text-white';
-        } else if (operacion?.toLowerCase().includes('arriendo')) {
-            return 'bg-indigo-500 text-white';
-        }
-        return 'bg-primary text-white';
     };
 
     const nextImage = () => {
@@ -166,10 +100,10 @@ const PropertyDetail = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-obsidian flex items-center justify-center pt-20">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-gray-600">Cargando propiedad...</p>
+                    <div className="inline-block w-10 h-10 border-2 border-gold/30 border-t-gold rounded-full animate-spin mb-4"></div>
+                    <p className="text-ivory/40 font-jakarta text-sm">Cargando propiedad...</p>
                 </div>
             </div>
         );
@@ -177,11 +111,11 @@ const PropertyDetail = () => {
 
     if (!property) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-obsidian flex items-center justify-center pt-20">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Propiedad no encontrada</h2>
-                    <p className="text-gray-600 mb-4">La propiedad que buscas no existe o fue eliminada.</p>
-                    <Link to="/" className="text-primary hover:text-blue-700 font-medium">
+                    <h2 className="title-editorial text-3xl text-ivory mb-3">Propiedad no encontrada</h2>
+                    <p className="text-ivory/40 font-jakarta mb-6">La propiedad que buscas no existe o fue eliminada.</p>
+                    <Link to="/" className="btn-gold-outline text-sm px-6 py-2.5">
                         Volver al inicio
                     </Link>
                 </div>
@@ -190,41 +124,50 @@ const PropertyDetail = () => {
     }
 
     const images = property.propiedades_imagenes?.sort((a, b) => a.orden - b.orden) || [];
-    const currentImage = images[activeImage]?.url || 'https://via.placeholder.com/800x600?text=Sin+Imagen';
+    const currentImage = images[activeImage]?.url || null;
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-obsidian pt-20 pb-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
                 {/* Back Navigation */}
                 <button
                     onClick={() => navigate(-1)}
-                    className="inline-flex items-center text-gray-600 hover:text-primary transition-colors mb-6 group"
+                    className="inline-flex items-center text-ivory/50 hover:text-gold transition-colors mt-8 mb-6 group font-jakarta text-sm"
                 >
-                    <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                    <span className="font-medium">Volver</span>
+                    <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                    <span>Volver</span>
                 </button>
 
                 {/* Main Content */}
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div className="card-dark rounded-2xl overflow-hidden">
                     {/* Header with Operation Badge */}
                     <div className="relative">
                         {/* Image Gallery */}
-                        <div className="relative h-[500px] bg-gray-900">
-                            <img
-                                src={currentImage}
-                                alt={property.titulo}
-                                className="w-full h-full object-cover"
-                            />
+                        <div className="relative h-[500px] bg-obsidian-light">
+                            {currentImage ? (
+                                <img
+                                    src={currentImage}
+                                    alt={property.titulo}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <Home className="h-24 w-24 text-obsidian-50/20" />
+                                </div>
+                            )}
+
+                            {/* Dark overlay gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-obsidian/60 via-transparent to-obsidian/20" />
 
                             {/* Operation Badge */}
                             {property.tipos_operacion?.nombre && (
-                                <div className={`absolute top-4 left-4 px-4 py-2 rounded-full font-bold text-sm uppercase tracking-wide shadow-lg ${getOperacionBadgeColor(property.tipos_operacion.nombre)}`}>
+                                <div className="absolute top-6 left-6 bg-gold text-obsidian px-5 py-2 font-jakarta font-bold text-sm uppercase tracking-widest">
                                     {property.tipos_operacion.nombre}
                                 </div>
                             )}
 
                             {/* Estado Badge */}
-                            <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-sm font-medium border ${getEstadoBadgeColor(property.estado)}`}>
+                            <div className={`absolute top-6 right-6 px-4 py-1.5 text-sm font-jakarta font-medium border ${getEstadoBadgeColor(property.estado)}`}>
                                 {property.estado?.charAt(0).toUpperCase() + property.estado?.slice(1)}
                             </div>
 
@@ -233,22 +176,22 @@ const PropertyDetail = () => {
                                 <>
                                     <button
                                         onClick={prevImage}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-900 p-3 rounded-full shadow-lg transition-all hover:scale-110"
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-obsidian/70 backdrop-blur-sm hover:bg-gold text-ivory hover:text-obsidian p-3 rounded-full transition-all duration-300"
                                     >
-                                        <ChevronLeft className="h-6 w-6" />
+                                        <ChevronLeft className="h-5 w-5" />
                                     </button>
                                     <button
                                         onClick={nextImage}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-900 p-3 rounded-full shadow-lg transition-all hover:scale-110"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-obsidian/70 backdrop-blur-sm hover:bg-gold text-ivory hover:text-obsidian p-3 rounded-full transition-all duration-300"
                                     >
-                                        <ChevronRight className="h-6 w-6" />
+                                        <ChevronRight className="h-5 w-5" />
                                     </button>
                                 </>
                             )}
 
                             {/* Image Counter */}
                             {images.length > 1 && (
-                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium">
+                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-obsidian/70 backdrop-blur-sm text-ivory/80 px-4 py-1.5 text-sm font-jakarta font-medium">
                                     {activeImage + 1} / {images.length}
                                 </div>
                             )}
@@ -256,14 +199,14 @@ const PropertyDetail = () => {
 
                         {/* Image Thumbnails */}
                         {images.length > 1 && (
-                            <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-white rounded-xl shadow-lg">
+                            <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-charcoal border border-obsidian-50/10 rounded-lg">
                                 {images.slice(0, 6).map((img, index) => (
                                     <button
                                         key={index}
                                         onClick={() => setActiveImage(index)}
-                                        className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${activeImage === index
-                                            ? 'border-primary scale-105'
-                                            : 'border-transparent hover:border-gray-300'
+                                        className={`relative w-14 h-14 rounded overflow-hidden border-2 transition-all ${activeImage === index
+                                            ? 'border-gold scale-105'
+                                            : 'border-transparent hover:border-ivory/30 opacity-60 hover:opacity-100'
                                             }`}
                                     >
                                         <img
@@ -272,7 +215,7 @@ const PropertyDetail = () => {
                                             className="w-full h-full object-cover"
                                         />
                                         {index === 5 && images.length > 6 && (
-                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold">
+                                            <div className="absolute inset-0 bg-obsidian/70 flex items-center justify-center text-ivory font-jakarta font-bold text-sm">
                                                 +{images.length - 6}
                                             </div>
                                         )}
@@ -283,24 +226,24 @@ const PropertyDetail = () => {
                     </div>
 
                     {/* Content Section */}
-                    <div className={`p-8 ${images.length > 1 ? 'pt-24' : ''}`}>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className={`p-8 lg:p-10 ${images.length > 1 ? 'pt-24' : ''}`}>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                             {/* Left Column - Main Info */}
                             <div className="lg:col-span-2 space-y-8">
                                 {/* Title & Price */}
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                                     <div>
-                                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                        <h1 className="title-editorial text-3xl lg:text-4xl text-ivory mb-3">
                                             {property.titulo}
                                         </h1>
-                                        <div className="flex items-center text-gray-500">
-                                            <MapPin className="h-5 w-5 mr-2 text-primary" />
-                                            <span>{property.direccion_referencial}</span>
+                                        <div className="flex items-center text-ivory/50">
+                                            <MapPin className="h-4 w-4 mr-2 text-gold" />
+                                            <span className="font-jakarta text-sm">{property.direccion_referencial}</span>
                                         </div>
                                     </div>
-                                    <div className="bg-gradient-to-r from-primary to-blue-600 text-white px-6 py-3 rounded-xl shadow-lg">
-                                        <div className="text-sm opacity-90">Precio</div>
-                                        <div className="text-2xl font-bold">
+                                    <div className="bg-gold text-obsidian px-6 py-4 flex-shrink-0">
+                                        <div className="text-xs font-jakarta font-medium opacity-70 uppercase tracking-wide">Precio</div>
+                                        <div className="text-2xl font-cormorant font-semibold">
                                             UF {property.precio_uf?.toLocaleString()}
                                         </div>
                                     </div>
@@ -309,17 +252,17 @@ const PropertyDetail = () => {
                                 {/* Property Type & Location */}
                                 <div className="flex flex-wrap gap-3">
                                     {property.tipos_propiedad?.nombre && (
-                                        <div className="inline-flex items-center bg-gray-100 text-gray-700 px-4 py-2 rounded-full">
-                                            <Home className="h-4 w-4 mr-2" />
-                                            <span className="font-medium">{property.tipos_propiedad.nombre}</span>
+                                        <div className="inline-flex items-center bg-obsidian border border-obsidian-50/20 text-ivory/70 px-4 py-2 text-sm font-jakarta">
+                                            <Home className="h-4 w-4 mr-2 text-gold" />
+                                            {property.tipos_propiedad.nombre}
                                         </div>
                                     )}
                                     {property.comunas?.nombre && (
-                                        <div className="inline-flex items-center bg-gray-100 text-gray-700 px-4 py-2 rounded-full">
-                                            <Building2 className="h-4 w-4 mr-2" />
-                                            <span className="font-medium">{property.comunas.nombre}</span>
+                                        <div className="inline-flex items-center bg-obsidian border border-obsidian-50/20 text-ivory/70 px-4 py-2 text-sm font-jakarta">
+                                            <Building2 className="h-4 w-4 mr-2 text-gold" />
+                                            {property.comunas.nombre}
                                             {property.comunas.regiones?.nombre && (
-                                                <span className="text-gray-400 ml-1">
+                                                <span className="text-ivory/30 ml-1.5">
                                                     • {property.comunas.regiones.nombre}
                                                 </span>
                                             )}
@@ -329,37 +272,27 @@ const PropertyDetail = () => {
 
                                 {/* Features Grid */}
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    <div className="bg-gray-50 rounded-xl p-4 text-center hover:bg-gray-100 transition-colors">
-                                        <Bed className="h-8 w-8 text-primary mx-auto mb-2" />
-                                        <div className="text-2xl font-bold text-gray-900">{property.habitaciones}</div>
-                                        <div className="text-sm text-gray-500">Dormitorios</div>
-                                    </div>
-                                    <div className="bg-gray-50 rounded-xl p-4 text-center hover:bg-gray-100 transition-colors">
-                                        <Bath className="h-8 w-8 text-primary mx-auto mb-2" />
-                                        <div className="text-2xl font-bold text-gray-900">{property.banos}</div>
-                                        <div className="text-sm text-gray-500">Baños</div>
-                                    </div>
-                                    <div className="bg-gray-50 rounded-xl p-4 text-center hover:bg-gray-100 transition-colors">
-                                        <Maximize className="h-8 w-8 text-primary mx-auto mb-2" />
-                                        <div className="text-2xl font-bold text-gray-900">{property.mt2_construidos}</div>
-                                        <div className="text-sm text-gray-500">m² Construidos</div>
-                                    </div>
-                                    <div className="bg-gray-50 rounded-xl p-4 text-center hover:bg-gray-100 transition-colors">
-                                        <LandPlot className="h-8 w-8 text-primary mx-auto mb-2" />
-                                        <div className="text-2xl font-bold text-gray-900">
-                                            {property.mt2_terreno || '-'}
+                                    {[
+                                        { icon: Bed, value: property.habitaciones, label: 'Dormitorios' },
+                                        { icon: Bath, value: property.banos, label: 'Baños' },
+                                        { icon: Maximize, value: property.mt2_construidos, label: 'm² Construidos' },
+                                        { icon: LandPlot, value: property.mt2_terreno || '-', label: 'm² Terreno' },
+                                    ].map(({ icon: Icon, value, label }, idx) => (
+                                        <div key={idx} className="bg-obsidian border border-obsidian-50/10 rounded-lg p-4 text-center hover:border-gold/20 transition-colors">
+                                            <Icon className="h-6 w-6 text-gold mx-auto mb-2" />
+                                            <div className="text-xl font-jakarta font-bold text-ivory">{value}</div>
+                                            <div className="text-xs text-ivory/40 font-jakarta mt-1">{label}</div>
                                         </div>
-                                        <div className="text-sm text-gray-500">m² Terreno</div>
-                                    </div>
+                                    ))}
                                 </div>
 
                                 {/* Description */}
-                                <div className="border-t pt-8">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                                        <Tag className="h-5 w-5 mr-2 text-primary" />
+                                <div className="border-t border-obsidian-50/10 pt-8">
+                                    <h3 className="text-lg font-jakarta font-bold text-ivory mb-4 flex items-center">
+                                        <Tag className="h-4 w-4 mr-2 text-gold" />
                                         Descripción
                                     </h3>
-                                    <p className="text-gray-600 whitespace-pre-line leading-relaxed">
+                                    <p className="text-ivory/60 whitespace-pre-line leading-relaxed font-jakarta text-sm">
                                         {property.descripcion}
                                     </p>
                                 </div>
@@ -367,68 +300,32 @@ const PropertyDetail = () => {
 
                             {/* Right Column - Map & Contact */}
                             <div className="space-y-6">
-                                {/* Location Map */}
-                                <div className="bg-gray-50 rounded-xl p-4">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                        <Map className="h-5 w-5 mr-2 text-primary" />
+                                {/* Location */}
+                                <div className="bg-obsidian rounded-xl p-5 border border-obsidian-50/10">
+                                    <h3 className="text-lg font-jakarta font-bold text-ivory mb-4 flex items-center">
+                                        <Map className="h-4 w-4 mr-2 text-gold" />
                                         Ubicación
                                     </h3>
 
-                                    {!mapsLoaded ? (
-                                        <div className="h-[400px] bg-gray-200 rounded-xl flex items-center justify-center">
-                                            <div className="text-center text-gray-500">
-                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                                                <p>Cargando mapa...</p>
-                                            </div>
+                                    {/* Google Maps desactivado temporalmente */}
+                                    <div className="h-[250px] bg-obsidian-light rounded-lg flex items-center justify-center border border-obsidian-50/10">
+                                        <div className="text-center text-ivory/30">
+                                            <MapPin className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                                            <p className="font-jakarta text-sm font-medium">Mapa no disponible</p>
+                                            <p className="text-xs mt-1">Próximamente</p>
                                         </div>
-                                    ) : location ? (
-                                        <GoogleMap
-                                            mapContainerStyle={mapContainerStyle}
-                                            center={location}
-                                            zoom={15}
-                                            options={{
-                                                disableDefaultUI: false,
-                                                zoomControl: true,
-                                                mapTypeControl: false,
-                                                streetViewControl: true,
-                                                fullscreenControl: true,
-                                            }}
-                                        >
-                                            <Marker
-                                                position={location}
-                                                onClick={() => setShowInfoWindow(true)}
-                                            />
-                                            {showInfoWindow && (
-                                                <InfoWindow
-                                                    position={location}
-                                                    onCloseClick={() => setShowInfoWindow(false)}
-                                                >
-                                                    <div className="p-2">
-                                                        <h4 className="font-bold text-gray-900">{property.titulo}</h4>
-                                                        <p className="text-sm text-gray-600">{property.direccion_referencial}</p>
-                                                    </div>
-                                                </InfoWindow>
-                                            )}
-                                        </GoogleMap>
-                                    ) : (
-                                        <div className="h-[400px] bg-gray-200 rounded-xl flex items-center justify-center">
-                                            <div className="text-center text-gray-500">
-                                                <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                                                <p>{geocodingDone ? 'Ubicación no disponible' : 'Obteniendo ubicación...'}</p>
-                                            </div>
-                                        </div>
-                                    )}
+                                    </div>
 
                                     {/* Address Details */}
-                                    <div className="mt-4 p-4 bg-white rounded-lg border">
+                                    <div className="mt-4 p-4 bg-charcoal-dark rounded-lg border border-obsidian-50/10">
                                         <div className="flex items-start gap-3">
-                                            <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                                            <MapPin className="h-4 w-4 text-gold mt-0.5 flex-shrink-0" />
                                             <div>
-                                                <p className="font-medium text-gray-900">
+                                                <p className="font-jakarta font-medium text-ivory text-sm">
                                                     {property.direccion_referencial}
                                                 </p>
                                                 {property.comunas?.nombre && (
-                                                    <p className="text-sm text-gray-500">
+                                                    <p className="text-xs text-ivory/40 font-jakarta mt-1">
                                                         {property.comunas.nombre}
                                                         {property.comunas.regiones?.nombre && (
                                                             <>, {property.comunas.regiones.nombre}</>
@@ -441,12 +338,12 @@ const PropertyDetail = () => {
                                 </div>
 
                                 {/* Contact Card */}
-                                <div className="bg-gradient-to-br from-primary to-blue-600 rounded-xl p-6 text-white">
-                                    <h3 className="text-lg font-bold mb-4">¿Te interesa esta propiedad?</h3>
-                                    <p className="text-blue-100 mb-4 text-sm">
-                                        Contáctanos para más información o agendar una visita.
+                                <div className="bg-gold rounded-xl p-6">
+                                    <h3 className="text-lg font-jakarta font-bold text-obsidian mb-3">¿Te interesa esta propiedad?</h3>
+                                    <p className="text-obsidian/70 mb-5 text-sm font-jakarta">
+                                        Contáctanos para más información o agendar una visita exclusiva.
                                     </p>
-                                    <button className="w-full bg-white text-primary font-bold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors">
+                                    <button className="w-full bg-obsidian text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wide hover:bg-obsidian-light transition-colors">
                                         Contactar
                                     </button>
                                 </div>

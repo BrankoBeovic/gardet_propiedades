@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import LocationPicker from './LocationPicker';
+// LocationPicker desactivado temporalmente (Google Maps stand-by)
 import { Upload, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -31,7 +31,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
     });
 
     const [images, setImages] = useState([]);
-    const [imageFiles, setImageFiles] = useState([]);
 
     // Load dropdown data
     useEffect(() => {
@@ -134,18 +133,8 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
         }
     };
 
-
-    const handleLocationChange = (location) => {
-        setFormData(prev => ({ ...prev, ubicacion: location }));
-    };
-
-    const handleAddressChange = (address) => {
-        setFormData(prev => ({ ...prev, direccion_referencial: address }));
-    };
-
     const handleImageSelect = (e) => {
         const files = Array.from(e.target.files);
-        setImageFiles(prev => [...prev, ...files]);
 
         // Create previews
         files.forEach(file => {
@@ -164,7 +153,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
 
     const handleRemoveImage = (index) => {
         setImages(prev => prev.filter((_, i) => i !== index));
-        setImageFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSetCover = (index) => {
@@ -319,28 +307,31 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
         }
     };
 
+    const labelClass = "block text-sm font-jakarta font-medium text-ivory/70 mb-1.5";
+
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
-            <h2 className="text-2xl font-bold text-gray-900">
+        <form onSubmit={handleSubmit} className="space-y-6 card-dark rounded-xl p-6 lg:p-8">
+            <h2 className="title-editorial text-2xl text-ivory">
                 {property ? 'Editar Propiedad' : 'Nueva Propiedad'}
             </h2>
+            <div className="gold-line"></div>
 
             {/* Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Título *</label>
+                    <label className={labelClass}>Título *</label>
                     <input
                         type="text"
                         name="titulo"
                         value={formData.titulo}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="input-dark"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Precio (UF) *</label>
+                    <label className={labelClass}>Precio (UF) *</label>
                     <input
                         type="number"
                         name="precio_uf"
@@ -348,18 +339,18 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         onChange={handleChange}
                         required
                         step="0.01"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="input-dark"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Tipo de Propiedad *</label>
+                    <label className={labelClass}>Tipo de Propiedad *</label>
                     <select
                         name="tipo_propiedad_id"
                         value={formData.tipo_propiedad_id}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="select-dark"
                     >
                         <option value="">Seleccionar...</option>
                         {dropdownData.tipos_propiedad.map(tipo => (
@@ -369,13 +360,13 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Tipo de Operación *</label>
+                    <label className={labelClass}>Tipo de Operación *</label>
                     <select
                         name="operacion_id"
                         value={formData.operacion_id}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="select-dark"
                     >
                         <option value="">Seleccionar...</option>
                         {dropdownData.tipos_operacion.map(tipo => (
@@ -385,7 +376,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">M² Construidos *</label>
+                    <label className={labelClass}>M² Construidos *</label>
                     <input
                         type="number"
                         name="mt2_construidos"
@@ -393,54 +384,54 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         onChange={handleChange}
                         required
                         step="0.01"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="input-dark"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">M² Terreno</label>
+                    <label className={labelClass}>M² Terreno</label>
                     <input
                         type="number"
                         name="mt2_terreno"
                         value={formData.mt2_terreno}
                         onChange={handleChange}
                         step="0.01"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="input-dark"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Habitaciones *</label>
+                    <label className={labelClass}>Habitaciones *</label>
                     <input
                         type="number"
                         name="habitaciones"
                         value={formData.habitaciones}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="input-dark"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Baños *</label>
+                    <label className={labelClass}>Baños *</label>
                     <input
                         type="number"
                         name="banos"
                         value={formData.banos}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="input-dark"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Estado *</label>
+                    <label className={labelClass}>Estado *</label>
                     <select
                         name="estado"
                         value={formData.estado}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="select-dark"
                     >
                         <option value="borrador">Borrador</option>
                         <option value="publicada">Publicada</option>
@@ -450,13 +441,13 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Región *</label>
+                    <label className={labelClass}>Región *</label>
                     <select
                         name="region_id"
                         value={formData.region_id}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                        className="select-dark"
                     >
                         <option value="">Seleccionar...</option>
                         {dropdownData.regiones.map(region => (
@@ -466,14 +457,14 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Comuna *</label>
+                    <label className={labelClass}>Comuna *</label>
                     <select
                         name="comuna_id"
                         value={formData.comuna_id}
                         onChange={handleChange}
                         required
                         disabled={!formData.region_id}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2 disabled:bg-gray-100"
+                        className="select-dark disabled:opacity-40"
                     >
                         <option value="">Seleccionar...</option>
                         {dropdownData.comunas.map(comuna => (
@@ -484,49 +475,44 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">
-                    Dirección Referencial *
-                    <span className="ml-2 text-xs text-gray-500">(Se completa automáticamente desde el mapa)</span>
-                </label>
+                <label className={labelClass}>Dirección Referencial *</label>
                 <input
                     type="text"
                     name="direccion_referencial"
                     value={formData.direccion_referencial}
-                    readOnly
+                    onChange={handleChange}
                     required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm border p-2 bg-gray-100 cursor-not-allowed"
-                    placeholder="Busca una dirección en el mapa o haz clic en él"
+                    className="input-dark"
+                    placeholder="Ingresa la dirección de la propiedad"
                 />
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Descripción *</label>
+                <label className={labelClass}>Descripción *</label>
                 <textarea
                     name="descripcion"
                     value={formData.descripcion}
                     onChange={handleChange}
                     required
                     rows={4}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm border p-2"
+                    className="input-dark resize-none"
                 />
             </div>
 
-            {/* Location Picker */}
-            <LocationPicker
-                value={formData.ubicacion}
-                onChange={handleLocationChange}
-                addressValue={formData.direccion_referencial}
-                onAddressChange={handleAddressChange}
-            />
+            {/* Location Picker - Google Maps desactivado temporalmente */}
+            <div className="bg-obsidian border border-obsidian-50/10 rounded-lg p-6 text-center">
+                <p className="text-ivory/30 text-sm font-jakarta">📍 Mapa de ubicación desactivado temporalmente</p>
+                <p className="text-ivory/20 text-xs font-jakarta mt-1">Ingresa la dirección manualmente en el campo de arriba</p>
+            </div>
 
             {/* Image Upload */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Imágenes</label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                <label className={labelClass}>Imágenes</label>
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border border-dashed border-obsidian-50/20 rounded-lg hover:border-gold/30 transition-colors cursor-pointer">
                     <div className="space-y-1 text-center">
-                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                        <div className="flex text-sm text-gray-600">
-                            <label className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-blue-700">
+                        <Upload className="mx-auto h-10 w-10 text-ivory/20" />
+                        <div className="flex text-sm text-ivory/40 font-jakarta">
+                            <label className="relative cursor-pointer font-medium text-gold hover:text-gold-light transition-colors">
                                 <span>Subir imágenes</span>
                                 <input
                                     type="file"
@@ -544,24 +530,26 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 {images.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                         {images.map((image, index) => (
-                            <div key={index} className="relative group">
+                            <div key={index} className="relative group rounded-lg overflow-hidden border border-obsidian-50/10">
                                 <img
                                     src={image.url}
                                     alt={`Preview ${index}`}
-                                    className="h-32 w-full object-cover rounded-lg"
+                                    className="h-28 w-full object-cover"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveImage(index)}
-                                    className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+                                    className="absolute top-1.5 right-1.5 bg-red-500/80 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleSetCover(index)}
-                                    className={`absolute bottom-1 left-1 px-2 py-1 text-xs rounded ${image.es_portada ? 'bg-primary text-white' : 'bg-white text-gray-700'
-                                        }`}
+                                    className={`absolute bottom-1.5 left-1.5 px-2 py-0.5 text-xs font-jakarta rounded ${image.es_portada
+                                        ? 'bg-gold text-obsidian font-semibold'
+                                        : 'bg-obsidian/70 text-ivory/70 hover:bg-gold/20'
+                                        } transition-colors`}
                                 >
                                     {image.es_portada ? 'Portada' : 'Marcar portada'}
                                 </button>
@@ -572,20 +560,25 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3 pt-4 border-t border-obsidian-50/10">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    className="px-5 py-2.5 border border-obsidian-50/20 text-ivory/50 hover:text-ivory hover:border-ivory/30 font-jakarta text-sm font-medium transition-colors"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 disabled:bg-gray-400"
+                    className="btn-gold px-6 py-2.5 disabled:opacity-50"
                 >
-                    {loading ? 'Guardando...' : 'Guardar Propiedad'}
+                    {loading ? (
+                        <span className="flex items-center gap-2">
+                            <span className="inline-block w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin"></span>
+                            Guardando...
+                        </span>
+                    ) : 'Guardar Propiedad'}
                 </button>
             </div>
         </form>

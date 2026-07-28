@@ -3,12 +3,17 @@ import { Edit, Trash2, Eye } from 'lucide-react';
 
 const PropertyList = ({ properties, onEdit, onDelete, loading }) => {
     if (loading) {
-        return <div className="text-center py-8">Cargando propiedades...</div>;
+        return (
+            <div className="text-center py-12">
+                <div className="inline-block w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin"></div>
+                <p className="mt-3 text-ivory/40 font-jakarta text-sm">Cargando propiedades...</p>
+            </div>
+        );
     }
 
     if (!properties || properties.length === 0) {
         return (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-12 text-ivory/40 font-jakarta">
                 No tienes propiedades creadas aún. ¡Crea tu primera propiedad!
             </div>
         );
@@ -16,69 +21,69 @@ const PropertyList = ({ properties, onEdit, onDelete, loading }) => {
 
     const getEstadoBadge = (estado) => {
         const colors = {
-            borrador: 'bg-gray-200 text-gray-800',
-            publicada: 'bg-green-200 text-green-800',
-            vendida: 'bg-blue-200 text-blue-800',
-            arrendada: 'bg-purple-200 text-purple-800'
+            borrador: 'bg-ivory/10 text-ivory/60 border-ivory/20',
+            publicada: 'bg-green-500/15 text-green-400 border-green-500/20',
+            vendida: 'bg-gold/15 text-gold border-gold/20',
+            arrendada: 'bg-purple-500/15 text-purple-400 border-purple-500/20'
         };
-        return colors[estado] || 'bg-gray-200 text-gray-800';
+        return colors[estado] || 'bg-ivory/10 text-ivory/60 border-ivory/20';
     };
 
     return (
         <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-obsidian-50/10">
+                <thead className="bg-obsidian-light">
                     <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-jakarta font-semibold text-gold uppercase tracking-wider">
                             Título
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-jakarta font-semibold text-gold uppercase tracking-wider">
                             Precio (UF)
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-jakarta font-semibold text-gold uppercase tracking-wider">
                             Estado
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-jakarta font-semibold text-gold uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-obsidian-50/10">
                     {properties.map((property) => (
-                        <tr key={property.id} className="hover:bg-gray-50">
+                        <tr key={property.id} className="hover:bg-charcoal/50 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-900">{property.titulo}</div>
-                                <div className="text-sm text-gray-500">{property.direccion_referencial}</div>
+                                <div className="text-sm font-jakarta font-medium text-ivory">{property.titulo}</div>
+                                <div className="text-xs font-jakarta text-ivory/40 mt-0.5">{property.direccion_referencial}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-900">UF {property.precio_uf?.toLocaleString()}</div>
+                                <div className="text-sm font-jakarta text-gold font-semibold">UF {property.precio_uf?.toLocaleString()}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getEstadoBadge(property.estado)}`}>
+                                <span className={`px-3 py-1 inline-flex text-xs font-jakarta font-medium border ${getEstadoBadge(property.estado)}`}>
                                     {property.estado}
                                 </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
                                 <button
                                     onClick={() => window.open(`/propiedad/${property.id}`, '_blank')}
-                                    className="text-blue-600 hover:text-blue-900"
+                                    className="text-ivory/40 hover:text-gold transition-colors"
                                     title="Ver"
                                 >
-                                    <Eye className="h-5 w-5 inline" />
+                                    <Eye className="h-4 w-4 inline" />
                                 </button>
                                 <button
                                     onClick={() => onEdit(property)}
-                                    className="text-indigo-600 hover:text-indigo-900"
+                                    className="text-ivory/40 hover:text-gold transition-colors"
                                     title="Editar"
                                 >
-                                    <Edit className="h-5 w-5 inline" />
+                                    <Edit className="h-4 w-4 inline" />
                                 </button>
                                 <button
                                     onClick={() => onDelete(property.id)}
-                                    className="text-red-600 hover:text-red-900"
+                                    className="text-ivory/40 hover:text-red-400 transition-colors"
                                     title="Eliminar"
                                 >
-                                    <Trash2 className="h-5 w-5 inline" />
+                                    <Trash2 className="h-4 w-4 inline" />
                                 </button>
                             </td>
                         </tr>

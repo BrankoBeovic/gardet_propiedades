@@ -19,43 +19,43 @@ const PropertyCard = ({ property }) => {
     // Get the cover image or a placeholder
     const coverImage = propiedades_imagenes?.find(img => img.es_portada)?.url ||
         propiedades_imagenes?.[0]?.url ||
-        'https://via.placeholder.com/400x300?text=Sin+Imagen';
-
-    const getOperacionBadgeColor = (operacion) => {
-        if (operacion?.toLowerCase().includes('venta')) {
-            return 'bg-orange-500';
-        } else if (operacion?.toLowerCase().includes('arriendo')) {
-            return 'bg-indigo-500';
-        }
-        return 'bg-primary';
-    };
+        null;
 
     return (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="group card-dark rounded-xl overflow-hidden hover:glow-gold">
             {/* Image Section */}
-            <div className="relative h-52">
-                <img
-                    src={coverImage}
-                    alt={titulo}
-                    className="w-full h-full object-cover"
-                />
+            <div className="relative h-56 bg-obsidian-light overflow-hidden">
+                {coverImage ? (
+                    <img
+                        src={coverImage}
+                        alt={titulo}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <Home className="h-16 w-16 text-obsidian-50/30" />
+                    </div>
+                )}
+
+                {/* Dark gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-obsidian/80 via-transparent to-transparent" />
 
                 {/* Price Badge */}
-                <div className="absolute top-3 right-3 bg-gradient-to-r from-primary to-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg">
+                <div className="absolute top-4 right-4 bg-gold text-obsidian px-4 py-1.5 font-jakarta font-bold text-sm tracking-wide">
                     UF {precio_uf?.toLocaleString()}
                 </div>
 
                 {/* Operation Type Badge */}
                 {tipos_operacion?.nombre && (
-                    <div className={`absolute top-3 left-3 ${getOperacionBadgeColor(tipos_operacion.nombre)} text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg`}>
+                    <div className="absolute top-4 left-4 border border-ivory/40 text-ivory bg-obsidian/60 backdrop-blur-sm px-3 py-1 text-xs font-jakarta font-semibold uppercase tracking-widest">
                         {tipos_operacion.nombre}
                     </div>
                 )}
 
-                {/* Property Type Badge */}
+                {/* Property Type Badge - bottom */}
                 {tipos_propiedad?.nombre && (
-                    <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                        <Home className="h-3 w-3" />
+                    <div className="absolute bottom-4 left-4 text-ivory/80 text-xs font-jakarta font-medium flex items-center gap-1.5">
+                        <Home className="h-3.5 w-3.5 text-gold" />
                         {tipos_propiedad.nombre}
                     </div>
                 )}
@@ -64,39 +64,39 @@ const PropertyCard = ({ property }) => {
             {/* Content Section */}
             <div className="p-5">
                 {/* Title */}
-                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight">
+                <h3 className="font-jakarta font-bold text-ivory text-lg mb-2 line-clamp-2 leading-tight group-hover:text-gold transition-colors duration-300">
                     {titulo}
                 </h3>
 
                 {/* Address */}
-                <div className="flex items-start text-gray-500 mb-4 text-sm">
-                    <MapPin className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0 text-primary" />
-                    <span className="line-clamp-2">{direccion_referencial}</span>
+                <div className="flex items-start text-ivory/50 mb-4 text-sm">
+                    <MapPin className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0 text-gold/60" />
+                    <span className="line-clamp-2 font-jakarta">{direccion_referencial}</span>
                 </div>
 
                 {/* Features Grid */}
-                <div className="grid grid-cols-3 gap-2 text-center border-t border-b border-gray-100 py-3 mb-4">
+                <div className="grid grid-cols-3 gap-2 text-center border-t border-b border-obsidian-50/10 py-3 mb-4">
                     <div className="flex flex-col items-center">
-                        <Bed className="h-5 w-5 text-primary mb-1" />
-                        <span className="text-sm font-semibold text-gray-900">{habitaciones}</span>
-                        <span className="text-xs text-gray-500">Dorm.</span>
+                        <Bed className="h-4 w-4 text-gold mb-1" />
+                        <span className="text-sm font-semibold text-ivory font-jakarta">{habitaciones}</span>
+                        <span className="text-xs text-ivory/40 font-jakarta">Dorm.</span>
                     </div>
-                    <div className="flex flex-col items-center border-x border-gray-100">
-                        <Bath className="h-5 w-5 text-primary mb-1" />
-                        <span className="text-sm font-semibold text-gray-900">{banos}</span>
-                        <span className="text-xs text-gray-500">Baños</span>
+                    <div className="flex flex-col items-center border-x border-obsidian-50/10">
+                        <Bath className="h-4 w-4 text-gold mb-1" />
+                        <span className="text-sm font-semibold text-ivory font-jakarta">{banos}</span>
+                        <span className="text-xs text-ivory/40 font-jakarta">Baños</span>
                     </div>
                     <div className="flex flex-col items-center">
-                        <Maximize className="h-5 w-5 text-primary mb-1" />
-                        <span className="text-sm font-semibold text-gray-900">{mt2_construidos}</span>
-                        <span className="text-xs text-gray-500">m²</span>
+                        <Maximize className="h-4 w-4 text-gold mb-1" />
+                        <span className="text-sm font-semibold text-ivory font-jakarta">{mt2_construidos}</span>
+                        <span className="text-xs text-ivory/40 font-jakarta">m²</span>
                     </div>
                 </div>
 
                 {/* Action Button */}
                 <Link
                     to={`/propiedad/${id}`}
-                    className="block w-full text-center bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg"
+                    className="block w-full text-center btn-gold-outline py-2.5 text-xs"
                 >
                     Ver Detalles
                 </Link>
