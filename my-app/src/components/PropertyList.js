@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Edit, Trash2, Eye } from 'lucide-react';
 
 const PropertyList = ({ properties, onEdit, onDelete, loading }) => {
@@ -64,13 +65,13 @@ const PropertyList = ({ properties, onEdit, onDelete, loading }) => {
                                 </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
-                                <button
-                                    onClick={() => window.open(`/propiedad/${property.id}`, '_blank')}
-                                    className="text-ivory/40 hover:text-gold transition-colors"
+                                <Link
+                                    to={`/propiedad/${property.id}`}
+                                    className="text-ivory/40 hover:text-gold transition-colors inline-block"
                                     title="Ver"
                                 >
                                     <Eye className="h-4 w-4 inline" />
-                                </button>
+                                </Link>
                                 <button
                                     onClick={() => onEdit(property)}
                                     className="text-ivory/40 hover:text-gold transition-colors"

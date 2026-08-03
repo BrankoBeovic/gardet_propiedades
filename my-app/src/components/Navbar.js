@@ -37,10 +37,10 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 {/* Brand Logo / Text */}
                 <Link to="/" className="flex items-center space-x-3 group">
-                    <span className="text-gardet-gold font-bold text-lg tracking-widest uppercase transition-opacity group-hover:opacity-90">
+                    <span className="text-ivory font-extrabold text-lg tracking-widest uppercase transition-opacity group-hover:opacity-90">
                         GARDET
                     </span>
-                    <span className="text-xs text-gardet-muted font-mono border-l border-gardet-border pl-3 tracking-wider uppercase">
+                    <span className="text-xs text-gold font-jakarta border-l border-gardet-border pl-3 tracking-wider uppercase">
                         PROPIEDADES
                     </span>
                 </Link>
@@ -53,9 +53,8 @@ const Navbar = () => {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`transition-colors hover:text-gardet-gold ${
-                                    isActive ? 'text-gardet-gold font-semibold' : ''
-                                }`}
+                                className={`transition-colors hover:text-gardet-gold ${isActive ? 'text-gardet-gold font-semibold' : ''
+                                    }`}
                             >
                                 <span className="text-gardet-gold/70 mr-1.5">{item.num}.</span>
                                 {item.label}
@@ -64,29 +63,11 @@ const Navbar = () => {
                     })}
                 </nav>
 
-                {/* Action Button & Mobile Trigger */}
-                <div className="flex items-center space-x-4">
-                    {user ? (
-                        <Link
-                            to="/dashboard"
-                            className="hidden sm:inline-flex items-center space-x-2 px-4 py-2 bg-gardet-gold text-gardet-obsidian text-xs font-bold uppercase tracking-wider rounded hover:bg-gardet-goldLight transition-all"
-                        >
-                            <LayoutDashboard className="h-3.5 w-3.5" />
-                            <span>Dashboard</span>
-                        </Link>
-                    ) : (
-                        <Link
-                            to="/login"
-                            className="px-4 py-2 bg-gardet-gold text-gardet-obsidian text-xs font-bold uppercase tracking-wider rounded hover:bg-gardet-goldLight transition-all"
-                        >
-                            Acceder
-                        </Link>
-                    )}
-
-                    {/* Mobile Menu Button */}
+                {/* Mobile Trigger */}
+                <div className="flex items-center lg:hidden">
                     <button
                         onClick={() => setIsOpen(!isOpen)}
-                        className="lg:hidden text-slate-400 hover:text-gardet-gold transition-colors p-1"
+                        className="text-slate-400 hover:text-gardet-gold transition-colors p-1"
                         aria-label="Abrir menú"
                     >
                         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}

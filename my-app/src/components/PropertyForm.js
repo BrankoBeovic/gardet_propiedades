@@ -564,7 +564,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-5 py-2.5 border border-obsidian-50/20 text-ivory/50 hover:text-ivory hover:border-ivory/30 font-jakarta text-sm font-medium transition-colors"
+                    className="px-5 py-2.5 border border-obsidian-50/20 text-ivory/50 hover:text-ivory hover:border-ivory/30 font-jakarta text-sm font-medium transition-colors rounded-xl cursor-pointer"
                 >
                     Cancelar
                 </button>

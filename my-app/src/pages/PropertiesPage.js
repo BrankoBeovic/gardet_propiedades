@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
 
@@ -6,25 +7,67 @@ const PropertiesPage = ({ operationType }) => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
     const [title, setTitle] = useState('');
+    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         const fetchProperties = async () => {
             setLoading(true);
             try {
-                // First get the operation ID
-                const { data: opData, error: opError } = await supabase
-                    .from('tipos_operacion')
-                    .select('id, nombre')
-                    .ilike('nombre', operationType) // Case insensitive match
-                    .single();
+                // Read filters from query params
+                const qOperacion = searchParams.get('operacion');
+                const qTipo = searchParams.get('tipo');
+                const qRegion = searchParams.get('region');
+                const qComuna = searchParams.get('comuna');
+                const qPrecioDesde = searchParams.get('precioDesde');
+                const qPrecioHasta = searchParams.get('precioHasta');
+                const qDormitorios = searchParams.get('dormitorios');
+                const qBanos = searchParams.get('banos');
 
-                if (opError) throw opError;
-                if (!opData) throw new Error('Operation type not found');
+                // If coming from legacy route with operationType prop
+                let operacionId = qOperacion || null;
 
-                setTitle(opData.nombre);
+                if (operationType && !operacionId) {
+                    const { data: opData, error: opError } = await supabase
+                        .from('tipos_operacion')
+                        .select('id, nombre')
+                        .ilike('nombre', operationType)
+                        .single();
 
-                // Then fetch properties with that operation ID
-                const { data, error } = await supabase
+                    if (opError) throw opError;
+                    if (!opData) throw new Error('Operation type not found');
+
+                    setTitle(`Propiedades en ${opData.nombre}`);
+                    operacionId = opData.id;
+                }
+
+                // --- Resolve region filter ---
+                // The 'propiedades' table does NOT have region_id.
+                // Region is implicit through the 'comunas' table (comunas.region_id).
+                // So to filter by region, we first fetch all comunas belonging to that region,
+                // then filter properties by those comunas using .in('comuna_id', [...]).
+                let comunaIdsForRegion = null;
+                if (qRegion && !qComuna) {
+                    // Only resolve region → comunas if no specific comuna is chosen
+                    const { data: comunasData, error: comunasError } = await supabase
+                        .from('comunas')
+                        .select('id')
+                        .eq('region_id', qRegion);
+
+                    if (comunasError) {
+                        console.error('Error fetching comunas for region:', comunasError);
+                    } else if (comunasData && comunasData.length > 0) {
+                        comunaIdsForRegion = comunasData.map(c => c.id);
+                    } else {
+                        // Region has no comunas or no properties — return empty result
+                        setProperties([]);
+                        setTitle('Resultados de Búsqueda');
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // Build query
+                let query = supabase
                     .from('propiedades')
                     .select(`
                         *,
@@ -39,25 +82,85 @@ const PropertiesPage = ({ operationType }) => {
                         tipos_operacion (
                             id,
                             nombre
+                        ),
+                        comunas (
+                            id,
+                            nombre,
+                            region_id
                         )
                     `)
-                    .eq('estado', 'publicada')
-                    .eq('operacion_id', opData.id);
+                    .eq('estado', 'publicada');
 
+                // Apply filters
+                if (operacionId) {
+                    query = query.eq('operacion_id', operacionId);
+                }
+                if (qTipo) {
+                    query = query.eq('tipo_propiedad_id', qTipo);
+                }
+                // Region filter: use IN clause with all comunas of that region
+                if (comunaIdsForRegion) {
+                    query = query.in('comuna_id', comunaIdsForRegion);
+                }
+                // Specific comuna filter (overrides region-only filter)
+                if (qComuna) {
+                    query = query.eq('comuna_id', qComuna);
+                }
+                if (qPrecioDesde) {
+                    query = query.gte('precio_uf', parseFloat(qPrecioDesde));
+                }
+                if (qPrecioHasta) {
+                    query = query.lte('precio_uf', parseFloat(qPrecioHasta));
+                }
+                if (qDormitorios) {
+                    query = query.gte('habitaciones', parseInt(qDormitorios));
+                }
+                if (qBanos) {
+                    query = query.gte('banos', parseInt(qBanos));
+                }
+
+                const { data, error } = await query;
                 if (error) throw error;
-                setProperties(data);
+                setProperties(data || []);
+
+                // Build dynamic title if not from legacy route
+                if (!operationType) {
+                    const parts = [];
+
+                    if (operacionId && data?.[0]?.tipos_operacion?.nombre) {
+                        parts.push(`en ${data[0].tipos_operacion.nombre}`);
+                    }
+
+                    setTitle(parts.length > 0
+                        ? `Propiedades ${parts.join(' ')}`
+                        : 'Resultados de Búsqueda'
+                    );
+                }
             } catch (error) {
                 console.error('Error fetching properties:', error.message);
+                setProperties([]);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchProperties();
-    }, [operationType]);
+    }, [operationType, searchParams]);
+
+    // Count active filters for display
+    const activeFilterCount = [
+        searchParams.get('operacion'),
+        searchParams.get('tipo'),
+        searchParams.get('region'),
+        searchParams.get('comuna'),
+        searchParams.get('precioDesde'),
+        searchParams.get('precioHasta'),
+        searchParams.get('dormitorios'),
+        searchParams.get('banos'),
+    ].filter(Boolean).length;
 
     return (
-        <div className="min-h-screen bg-obsidian pt-20">
+        <div className="min-h-screen pt-20">
             <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-12">
@@ -65,11 +168,16 @@ const PropertiesPage = ({ operationType }) => {
                         CATÁLOGO
                     </p>
                     <h1 className="title-editorial text-3xl sm:text-4xl lg:text-5xl text-ivory">
-                        Propiedades en {title || operationType}
+                        {title || (operationType ? `Propiedades en ${operationType}` : 'Resultados de Búsqueda')}
                     </h1>
                     <div className="flex justify-center mt-4">
                         <div className="gold-line"></div>
                     </div>
+                    {activeFilterCount > 0 && !operationType && (
+                        <p className="mt-4 text-ivory/40 font-jakarta text-sm">
+                            {properties.length} {properties.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas'} · {activeFilterCount} {activeFilterCount === 1 ? 'filtro activo' : 'filtros activos'}
+                        </p>
+                    )}
                 </div>
 
                 {loading ? (
@@ -80,7 +188,7 @@ const PropertiesPage = ({ operationType }) => {
                 ) : properties.length === 0 ? (
                     <div className="text-center py-16">
                         <p className="text-ivory/40 font-jakarta text-lg">
-                            No hay propiedades disponibles en esta categoría por el momento.
+                            No hay propiedades disponibles {operationType ? 'en esta categoría' : 'con los filtros seleccionados'} por el momento.
                         </p>
                     </div>
                 ) : (

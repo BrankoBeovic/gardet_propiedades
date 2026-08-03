@@ -19,7 +19,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='260' height='180' viewBox='0 0 260 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C5A262' stroke-width='1.8' opacity='0.16'%3E%3Cpath d='M25 62 V38 H14 L60 14 L106 37 V44 H116' /%3E%3Cline x1='25' y1='62' x2='155' y2='62' /%3E%3Ctext x='36' y='56' font-family='system-ui, sans-serif' font-weight='800' font-size='15' fill='%23C5A262' stroke='none' letter-spacing='1.5'%3EGARDET%3C/text%3E%3Ctext x='27' y='74' font-family='system-ui, sans-serif' font-weight='500' font-size='6.5' fill='%23C5A262' stroke='none' letter-spacing='3.5'%3EPROPIEDADES%3C/text%3E%3C/g%3E%3Cg fill='none' stroke='%23C5A262' stroke-width='1.8' opacity='0.16' transform='translate(130, 90)'%3E%3Cpath d='M25 62 V38 H14 L60 14 L106 37 V44 H116' /%3E%3Cline x1='25' y1='62' x2='155' y2='62' /%3E%3Ctext x='36' y='56' font-family='system-ui, sans-serif' font-weight='800' font-size='15' fill='%23C5A262' stroke='none' letter-spacing='1.5'%3EGARDET%3C/text%3E%3Ctext x='27' y='74' font-family='system-ui, sans-serif' font-weight='500' font-size='6.5' fill='%23C5A262' stroke='none' letter-spacing='3.5'%3EPROPIEDADES%3C/text%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='260' height='180' viewBox='0 0 260 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C5A262' stroke-width='1.8' opacity='0.16'%3E%3Cpath d='M25 62 V38 H14 L60 14 L106 37 H95 V48' /%3E%3Cline x1='25' y1='62' x2='155' y2='62' /%3E%3Ctext x='36' y='56' font-family='system-ui, sans-serif' font-weight='800' font-size='15' fill='%23C5A262' stroke='none' letter-spacing='1.5'%3EGARDET%3C/text%3E%3Ctext x='27' y='74' font-family='system-ui, sans-serif' font-weight='500' font-size='6.5' fill='%23C5A262' stroke='none' letter-spacing='3.5'%3EPROPIEDADES%3C/text%3E%3C/g%3E%3Cg fill='none' stroke='%23C5A262' stroke-width='1.8' opacity='0.16' transform='translate(130, 90)'%3E%3Cpath d='M25 62 V38 H14 L60 14 L106 37 H95 V48' /%3E%3Cline x1='25' y1='62' x2='155' y2='62' /%3E%3Ctext x='36' y='56' font-family='system-ui, sans-serif' font-weight='800' font-size='15' fill='%23C5A262' stroke='none' letter-spacing='1.5'%3EGARDET%3C/text%3E%3Ctext x='27' y='74' font-family='system-ui, sans-serif' font-weight='500' font-size='6.5' fill='%23C5A262' stroke='none' letter-spacing='3.5'%3EPROPIEDADES%3C/text%3E%3C/g%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 260px 180px;
     opacity: 0.55;
@@ -62,41 +62,41 @@
 
   /* Gold border button */
   .btn-gold-outline {
-    @apply border border-gold text-gold px-6 py-3 font-jakarta font-semibold text-sm tracking-wide
-           transition-all duration-300 hover:bg-gold hover:text-obsidian;
+    @apply border border-gold text-gold px-6 py-3 font-jakarta font-semibold text-sm tracking-wide rounded-xl
+           transition-all duration-300 hover:bg-gold hover:text-obsidian hover:shadow-lg hover:shadow-gold/20;
   }
 
   /* Gold filled button */
   .btn-gold {
-    @apply bg-gold text-obsidian px-6 py-3 font-jakarta font-bold text-sm tracking-wide
-           transition-all duration-300 hover:bg-gold-light;
+    @apply bg-gold text-obsidian px-6 py-3 font-jakarta font-bold text-sm tracking-wide rounded-xl
+           transition-all duration-300 hover:bg-gold-light shadow-md hover:shadow-lg hover:shadow-gold/20;
   }
 
-  /* Dark card */
+  /* Solid Dark card (100% opaque, sits above body pattern) */
   .card-dark {
-    @apply bg-charcoal border border-obsidian-50/10 rounded-lg
-           transition-all duration-300 hover:border-gold/30;
+    @apply bg-[#1C1C1E] border border-gold/20 rounded-xl shadow-xl shadow-black/60
+           transition-all duration-300 hover:border-gold/40 relative z-[1];
   }
 
-  /* Input dark style */
+  /* Input dark style (solid opaque) */
   .input-dark {
-    @apply w-full bg-obsidian-light border border-obsidian-50/20 rounded-md px-4 py-2.5
+    @apply w-full bg-[#141416] border border-gold/20 rounded-md px-4 py-2.5
            text-ivory placeholder-ivory/40 font-jakarta text-sm
-           focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/30
+           focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40
            transition-all duration-200;
   }
 
-  /* Select dark style */
+  /* Select dark style (solid opaque) */
   .select-dark {
-    @apply w-full bg-obsidian-light border border-obsidian-50/20 rounded-md px-4 py-2.5
+    @apply w-full bg-[#141416] border border-gold/20 rounded-md px-4 py-2.5
            text-ivory font-jakarta text-sm
-           focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/30
+           focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40
            transition-all duration-200 appearance-none cursor-pointer;
   }
 
-  /* Cormorant editorial title */
+  /* Ysabeau SC editorial title */
   .title-editorial {
-    @apply font-cormorant font-semibold;
+    @apply font-ysabeau font-semibold tracking-wide;
   }
 }
 
@@ -114,8 +114,141 @@
 
   /* Gardet Logo Pattern Background */
   .bg-gardet-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='260' height='180' viewBox='0 0 260 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C5A262' stroke-width='1.8' opacity='0.16'%3E%3Cpath d='M25 62 V38 H14 L60 14 L106 37 V44 H116' /%3E%3Cline x1='25' y1='62' x2='155' y2='62' /%3E%3Ctext x='36' y='56' font-family='system-ui, sans-serif' font-weight='800' font-size='15' fill='%23C5A262' stroke='none' letter-spacing='1.5'%3EGARDET%3C/text%3E%3Ctext x='27' y='74' font-family='system-ui, sans-serif' font-weight='500' font-size='6.5' fill='%23C5A262' stroke='none' letter-spacing='3.5'%3EPROPIEDADES%3C/text%3E%3C/g%3E%3Cg fill='none' stroke='%23C5A262' stroke-width='1.8' opacity='0.16' transform='translate(130, 90)'%3E%3Cpath d='M25 62 V38 H14 L60 14 L106 37 V44 H116' /%3E%3Cline x1='25' y1='62' x2='155' y2='62' /%3E%3Ctext x='36' y='56' font-family='system-ui, sans-serif' font-weight='800' font-size='15' fill='%23C5A262' stroke='none' letter-spacing='1.5'%3EGARDET%3C/text%3E%3Ctext x='27' y='74' font-family='system-ui, sans-serif' font-weight='500' font-size='6.5' fill='%23C5A262' stroke='none' letter-spacing='3.5'%3EPROPIEDADES%3C/text%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='260' height='180' viewBox='0 0 260 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C5A262' stroke-width='1.8' opacity='0.16'%3E%3Cpath d='M25 62 V38 H14 L60 14 L106 37 H95 V48' /%3E%3Cline x1='25' y1='62' x2='155' y2='62' /%3E%3Ctext x='36' y='56' font-family='system-ui, sans-serif' font-weight='800' font-size='15' fill='%23C5A262' stroke='none' letter-spacing='1.5'%3EGARDET%3C/text%3E%3Ctext x='27' y='74' font-family='system-ui, sans-serif' font-weight='500' font-size='6.5' fill='%23C5A262' stroke='none' letter-spacing='3.5'%3EPROPIEDADES%3C/text%3E%3C/g%3E%3Cg fill='none' stroke='%23C5A262' stroke-width='1.8' opacity='0.16' transform='translate(130, 90)'%3E%3Cpath d='M25 62 V38 H14 L60 14 L106 37 H95 V48' /%3E%3Cline x1='25' y1='62' x2='155' y2='62' /%3E%3Ctext x='36' y='56' font-family='system-ui, sans-serif' font-weight='800' font-size='15' fill='%23C5A262' stroke='none' letter-spacing='1.5'%3EGARDET%3C/text%3E%3Ctext x='27' y='74' font-family='system-ui, sans-serif' font-weight='500' font-size='6.5' fill='%23C5A262' stroke='none' letter-spacing='3.5'%3EPROPIEDADES%3C/text%3E%3C/g%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 260px 180px;
   }
+}
+
+/* Continuous Perpetual Showroom Marquee */
+@keyframes scrollMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  animation: scrollMarquee 40s linear infinite;
+}
+
+/* ===== Quiénes Somos Staggered Entrance Animations ===== */
+
+/* 1. Container slide from top */
+@keyframes slideFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 2. Container slide from bottom */
+@keyframes slideFromBottom {
+  0% {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 3. SplitText word reveal */
+@keyframes wordReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* 4. Image cinematic reveal */
+@keyframes imageReveal {
+  0% {
+    opacity: 0;
+    transform: scale(1.08);
+    clip-path: inset(10% 10% 10% 10%);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    clip-path: inset(0% 0% 0% 0%);
+  }
+}
+
+/* 5. Paragraph fade in stagger */
+@keyframes paragraphFade {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 6. Slide from Left (appearing from the left side of the screen) */
+@keyframes slideFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-150px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* --- Animation classes --- */
+
+/* Step 1: Left container (delay 0s) */
+.animate-slide-from-top {
+  animation: slideFromTop 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Step 2: SplitText words (each word gets --word-index via inline style) */
+.animate-split-word {
+  opacity: 0;
+  display: inline-block;
+  animation: wordReveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.1s + var(--word-index) * 0.03s);
+}
+
+/* Step 3: Image reveal (starts at 1.6s, duration 1.4s) */
+.animate-image-reveal {
+  opacity: 0;
+  animation: imageReveal 1.4s cubic-bezier(0.22, 1, 0.36, 1) 1.6s both;
+}
+
+/* Step 3 alt: Image slide from left */
+.animate-slide-from-left {
+  opacity: 0;
+  animation: slideFromLeft 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Step 4: Right container (starts AT THE SAME TIME as image reveal at 1.6s) */
+.animate-slide-from-bottom {
+  animation: slideFromBottom 1.4s cubic-bezier(0.22, 1, 0.36, 1) 1.6s both;
+}
+
+/* Step 5: Content paragraphs */
+.animate-paragraph {
+  opacity: 0;
+  animation: paragraphFade 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.8s + var(--p-index) * 0.1s);
 }

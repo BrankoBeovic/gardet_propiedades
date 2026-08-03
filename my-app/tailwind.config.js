@@ -56,8 +56,10 @@ module.exports = {
                 'gardet-muted': '#94A3B8',
             },
             fontFamily: {
-                jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
-                cormorant: ['"Cormorant Garamond"', 'serif'],
+                lato: ['"Lato"', 'sans-serif'],
+                jakarta: ['"Lato"', 'sans-serif'],
+                ysabeau: ['"Ysabeau SC"', 'sans-serif'],
+                cormorant: ['"Ysabeau SC"', 'sans-serif'],
             },
             letterSpacing: {
                 'brand': '1.5px',
@@ -87,3 +89,4 @@ module.exports = {
     },
     plugins: [],
 }
+// Trigger rebuild to clear cached error
