@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LayoutDashboard } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 const Navbar = () => {
@@ -26,10 +26,12 @@ const Navbar = () => {
     }, []);
 
     const navItems = [
-        { num: '01', label: 'Inicio', path: '/' },
-        { num: '02', label: 'Venta', path: '/venta' },
-        { num: '03', label: 'Arriendo', path: '/arriendo' },
-        ...(user ? [{ num: '04', label: 'Dashboard', path: '/dashboard' }] : [])
+        { label: 'Inicio', path: '/' },
+        { label: 'Venta', path: '/venta' },
+        { label: 'Arriendo', path: '/arriendo' },
+        { label: 'Sobre Nosotros', path: '/sobre-nosotros' },
+        { label: 'Contacto', path: '/contacto' },
+        ...(user ? [{ label: 'Dashboard', path: '/dashboard' }] : [])
     ];
 
     return (
@@ -56,7 +58,6 @@ const Navbar = () => {
                                 className={`transition-colors hover:text-gardet-gold ${isActive ? 'text-gardet-gold font-semibold' : ''
                                     }`}
                             >
-                                <span className="text-gardet-gold/70 mr-1.5">{item.num}.</span>
                                 {item.label}
                             </Link>
                         );
@@ -85,7 +86,6 @@ const Navbar = () => {
                             onClick={() => setIsOpen(false)}
                             className="block py-1 hover:text-gardet-gold transition-colors"
                         >
-                            <span className="text-gardet-gold/70 mr-2">{item.num}.</span>
                             {item.label}
                         </Link>
                     ))}

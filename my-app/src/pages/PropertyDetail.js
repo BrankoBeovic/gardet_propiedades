@@ -13,9 +13,13 @@ import {
     Building2,
     LandPlot,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    MessageCircle
 } from 'lucide-react';
+import { queueReturnScroll } from '../utils/scrollMemory';
 // Google Maps desactivado temporalmente
+
+const WHATSAPP_NUMBER = process.env.REACT_APP_WHATSAPP_NUMBER || '56987829204';
 
 const PropertyDetail = () => {
     const { id } = useParams();
@@ -23,15 +27,6 @@ const PropertyDetail = () => {
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
-    const [user, setUser] = useState(null);
-
-    useEffect(() => {
-        const checkUser = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user || null);
-        };
-        checkUser();
-    }, []);
 
     useEffect(() => {
         const fetchProperty = async () => {
@@ -108,19 +103,20 @@ const PropertyDetail = () => {
     };
 
     const handleBack = () => {
-        const referrer = document.referrer || '';
-        // If there's internal history stack within this tab
-        if (window.history.state && window.history.state.idx > 0) {
-            navigate(-1);
-        } else if (referrer.includes('/dashboard') || user) {
-            navigate('/dashboard');
-        } else if (referrer.includes('/arriendo')) {
-            navigate('/arriendo');
-        } else if (referrer.includes('/venta')) {
-            navigate('/venta');
-        } else {
-            navigate('/');
+        const saved = queueReturnScroll();
+
+        // Go back to the exact page we came from (with pending scroll queued)
+        if (saved?.path) {
+            navigate(saved.path);
+            return;
         }
+
+        if (window.history.length > 1) {
+            navigate(-1);
+            return;
+        }
+
+        navigate('/');
     };
 
     if (loading) {
@@ -150,6 +146,12 @@ const PropertyDetail = () => {
 
     const images = property.propiedades_imagenes?.sort((a, b) => a.orden - b.orden) || [];
     const currentImage = images[activeImage]?.url || null;
+
+    const operacion = property.tipos_operacion?.nombre || 'Consulta';
+    const propertyUrl = `${window.location.origin}/propiedad/${property.id}`;
+    const contactMessage = `Hola, me interesa la propiedad "${property.titulo}" (ID: ${property.id}), operación: ${operacion}.\nLink: ${propertyUrl}`;
+    const contactoPath = `/contacto?mensaje=${encodeURIComponent(contactMessage)}`;
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(contactMessage)}`;
 
     return (
         <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8">
@@ -365,9 +367,23 @@ const PropertyDetail = () => {
                                     <p className="text-obsidian/90 mb-5 text-sm font-jakarta font-medium">
                                         Contáctanos para más información o agendar una visita exclusiva.
                                     </p>
-                                    <button className="w-full bg-obsidian text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer">
-                                        Contactar
-                                    </button>
+                                    <div className="flex flex-col gap-3">
+                                        <Link
+                                            to={contactoPath}
+                                            className="w-full bg-obsidian text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer text-center"
+                                        >
+                                            Contactar
+                                        </Link>
+                                        <a
+                                            href={whatsappUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-full bg-obsidian/90 text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer text-center inline-flex items-center justify-center gap-2"
+                                        >
+                                            <MessageCircle className="h-4 w-4" />
+                                            WhatsApp
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>

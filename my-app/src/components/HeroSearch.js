@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
 
-const HeroSearch = () => {
+const HeroSearch = ({ className = '' }) => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [showAdvanced, setShowAdvanced] = useState(false);
 
-    // Filter state
-    const [operacion, setOperacion] = useState('');
-    const [tipoPropiedad, setTipoPropiedad] = useState('');
-    const [region, setRegion] = useState('');
-    const [comuna, setComuna] = useState('');
-    const [precioDesde, setPrecioDesde] = useState('');
-    const [precioHasta, setPrecioHasta] = useState('');
-    const [dormitorios, setDormitorios] = useState('');
-    const [banos, setBanos] = useState('');
+    // Filter state — hydrate from URL so the bar reflects active filters
+    const [operacion, setOperacion] = useState(() => searchParams.get('operacion') || '');
+    const [tipoPropiedad, setTipoPropiedad] = useState(() => searchParams.get('tipo') || '');
+    const [region, setRegion] = useState(() => searchParams.get('region') || '');
+    const [comuna, setComuna] = useState(() => searchParams.get('comuna') || '');
+    const [precioDesde, setPrecioDesde] = useState(() => searchParams.get('precioDesde') || '');
+    const [precioHasta, setPrecioHasta] = useState(() => searchParams.get('precioHasta') || '');
+    const [dormitorios, setDormitorios] = useState(() => searchParams.get('dormitorios') || '');
+    const [banos, setBanos] = useState(() => searchParams.get('banos') || '');
 
     // Dropdown data
     const [tiposOperacion, setTiposOperacion] = useState([]);
@@ -41,6 +42,30 @@ const HeroSearch = () => {
         };
         loadDropdowns();
     }, []);
+
+    // Keep advanced panel open when advanced filters are already in the URL
+    useEffect(() => {
+        if (
+            searchParams.get('precioDesde') ||
+            searchParams.get('precioHasta') ||
+            searchParams.get('dormitorios') ||
+            searchParams.get('banos')
+        ) {
+            setShowAdvanced(true);
+        }
+    }, [searchParams]);
+
+    // Sync filter fields when URL params change (e.g. browser back/forward)
+    useEffect(() => {
+        setOperacion(searchParams.get('operacion') || '');
+        setTipoPropiedad(searchParams.get('tipo') || '');
+        setRegion(searchParams.get('region') || '');
+        setComuna(searchParams.get('comuna') || '');
+        setPrecioDesde(searchParams.get('precioDesde') || '');
+        setPrecioHasta(searchParams.get('precioHasta') || '');
+        setDormitorios(searchParams.get('dormitorios') || '');
+        setBanos(searchParams.get('banos') || '');
+    }, [searchParams]);
 
     // Load comunas when region changes
     useEffect(() => {
@@ -79,7 +104,7 @@ const HeroSearch = () => {
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto mt-8 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+        <div className={`w-full max-w-5xl mx-auto ${className || 'mt-8 animate-fade-in-up'}`} style={className ? undefined : { animationDelay: '0.3s' }}>
             {/* CONTAINER 1: Main Search Bar (Sleek Horizontal Strip) */}
             <div className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/50">
                 {/* Glass background */}
@@ -189,7 +214,7 @@ const HeroSearch = () => {
                     className="inline-flex items-center gap-2 bg-[#141414]/80 backdrop-blur-md border border-gold/25 hover:border-gold/50 text-gold hover:text-gold-light px-4 py-2 rounded-xl transition-all duration-300 font-jakarta text-xs font-semibold tracking-wide shadow-lg group cursor-pointer"
                 >
                     <SlidersHorizontal className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90 text-gold" />
-                    <span>Búsqueda Avanzada</span>
+                    <span>Búsqueda avanzada</span>
                     <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-300 text-gold ${showAdvanced ? 'rotate-180' : ''}`} />
                 </button>
             </div>

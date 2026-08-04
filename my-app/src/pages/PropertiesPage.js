@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
+import HeroSearch from '../components/HeroSearch';
 
 const PropertiesPage = ({ operationType }) => {
     const [properties, setProperties] = useState([]);
@@ -163,7 +164,7 @@ const PropertiesPage = ({ operationType }) => {
         <div className="min-h-screen pt-20">
             <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
-                <div className="text-center mb-12">
+                <div className="text-center mb-8">
                     <p className="text-gold text-xs font-jakarta font-semibold tracking-descriptor uppercase mb-3">
                         CATÁLOGO
                     </p>
@@ -178,6 +179,11 @@ const PropertiesPage = ({ operationType }) => {
                             {properties.length} {properties.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas'} · {activeFilterCount} {activeFilterCount === 1 ? 'filtro activo' : 'filtros activos'}
                         </p>
                     )}
+                </div>
+
+                {/* Filter search bar */}
+                <div className="mb-12">
+                    <HeroSearch className="mt-0" />
                 </div>
 
                 {loading ? (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Maximize, Home } from 'lucide-react';
+import { rememberScrollForReturn } from '../utils/scrollMemory';
 
 const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
     const {
@@ -97,6 +98,7 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
                     to={`/propiedad/${id}`}
                     onMouseEnter={onButtonHover}
                     onMouseLeave={onButtonLeave}
+                    onClick={rememberScrollForReturn}
                     className="block w-full text-center btn-gold-outline py-2.5 text-xs font-bold uppercase tracking-wider relative z-10 rounded-xl"
                 >
                     Ver Detalles
