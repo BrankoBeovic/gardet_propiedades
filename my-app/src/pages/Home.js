@@ -6,10 +6,16 @@ import heroVideo from '../assets/video_home_gardet.mp4';
 import quienessomosImg from '../assets/Quienessomos_home.webp';
 import quieresVenderImg from '../assets/imagen_quieres_vender.webp';
 import louisImg from '../assets/Louis_home.webp';
+import { PROPERTY_CARD_SELECT } from '../lib/propertyHelpers';
+import { VALORACION_MAILTO } from '../constants/contact';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const Home = () => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [listError, setListError] = useState(null);
+
+    useDocumentMeta(null, 'GARDET Propiedades — Corredora inmobiliaria de ultra lujo en Santiago.');
 
     // Scroll visibility state for Quiénes Somos section
     const aboutRef = useRef(null);
@@ -39,24 +45,11 @@ const Home = () => {
     // Fetch properties
     useEffect(() => {
         const fetchProperties = async () => {
+            setListError(null);
             try {
                 const { data, error } = await supabase
                     .from('propiedades')
-                    .select(`
-                        *,
-                        propiedades_imagenes (
-                            url,
-                            es_portada
-                        ),
-                        tipos_propiedad (
-                            id,
-                            nombre
-                        ),
-                        tipos_operacion (
-                            id,
-                            nombre
-                        )
-                    `)
+                    .select(PROPERTY_CARD_SELECT)
                     .eq('estado', 'publicada')
                     .limit(12);
 
@@ -64,6 +57,7 @@ const Home = () => {
                 setProperties(data || []);
             } catch (error) {
                 console.error('Error fetching properties:', error.message);
+                setListError(error.message || 'No se pudieron cargar las propiedades destacadas');
             } finally {
                 setLoading(false);
             }
@@ -352,6 +346,12 @@ const Home = () => {
                         <div className="inline-block w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin"></div>
                         <p className="mt-4 text-ivory/40 font-jakarta text-sm">Cargando propiedades...</p>
                     </div>
+                ) : listError ? (
+                    <div className="text-center py-16">
+                        <p className="text-red-400 font-jakarta text-sm bg-red-400/10 border border-red-400/20 rounded-lg inline-block px-4 py-3">
+                            {listError}
+                        </p>
+                    </div>
                 ) : properties.length === 0 ? (
                     <div className="text-center py-16">
                         <p className="text-ivory/40 font-jakarta">No hay propiedades disponibles por el momento.</p>
@@ -422,10 +422,10 @@ const Home = () => {
                             Contarás con un asesor inmobiliario experto en tu zona que te acompañará durante todo el proceso de venta de tu propiedad, desde la valoración hasta acompañarte a la firma en el notario.
                         </p>
                         <div>
-                            <button type="button" className={`inline-block text-[#5B6D7A] font-jakarta font-semibold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase pb-1 border-b border-[#5B6D7A]/50 hover:text-[#7E6649] hover:border-[#7E6649] transition-all duration-300 ${isSellVisible ? 'animate-paragraph' : 'opacity-0'
+                            <a href={VALORACION_MAILTO} className={`inline-block text-[#5B6D7A] font-jakarta font-semibold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase pb-1 border-b border-[#5B6D7A]/50 hover:text-[#7E6649] hover:border-[#7E6649] transition-all duration-300 ${isSellVisible ? 'animate-paragraph' : 'opacity-0'
                                 }`} style={{ '--p-index': 2 }}>
                                 SOLICITA UNA VALORACIÓN GRATUITA
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -464,10 +464,10 @@ const Home = () => {
                                     Contarás con un asesor inmobiliario experto en tu zona que te acompañará durante todo el proceso de venta de tu propiedad, desde la valoración hasta acompañarte a la firma en el notario.
                                 </p>
                                 <div>
-                                    <button type="button" className={`inline-block text-[#5B6D7A] font-jakarta font-semibold text-[13px] tracking-[0.15em] uppercase pb-1 border-b-2 border-[#5B6D7A]/40 hover:text-[#7E6649] hover:border-[#7E6649] transition-all duration-300 ${isSellVisible ? 'animate-paragraph' : 'opacity-0'
+                                    <a href={VALORACION_MAILTO} className={`inline-block text-[#5B6D7A] font-jakarta font-semibold text-[13px] tracking-[0.15em] uppercase pb-1 border-b-2 border-[#5B6D7A]/40 hover:text-[#7E6649] hover:border-[#7E6649] transition-all duration-300 ${isSellVisible ? 'animate-paragraph' : 'opacity-0'
                                         }`} style={{ '--p-index': 2 }}>
                                         SOLICITA UNA VALORACIÓN GRATUITA
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>

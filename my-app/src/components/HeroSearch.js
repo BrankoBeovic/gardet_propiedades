@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { fetchComunasByRegion } from '../lib/propertyHelpers';
 
 const HeroSearch = () => {
     const navigate = useNavigate();
@@ -46,12 +47,13 @@ const HeroSearch = () => {
     useEffect(() => {
         const loadComunas = async () => {
             if (region) {
-                const { data } = await supabase
-                    .from('comunas')
-                    .select('id, nombre')
-                    .eq('region_id', region)
-                    .order('nombre');
-                setComunas(data || []);
+                try {
+                    const data = await fetchComunasByRegion(supabase, region);
+                    setComunas(data);
+                } catch (error) {
+                    console.error('Error loading comunas:', error);
+                    setComunas([]);
+                }
             } else {
                 setComunas([]);
                 setComuna('');

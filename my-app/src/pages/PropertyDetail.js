@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import {
     MapPin,
@@ -15,65 +15,46 @@ import {
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
-// Google Maps desactivado temporalmente
+import { useAuth } from '../auth/AuthProvider';
+import { PROPERTY_DETAIL_SELECT, getEstadoBadgeClasses } from '../lib/propertyHelpers';
+import { propertyInquiryMailto, propertyInquiryWhatsApp } from '../constants/contact';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const PropertyDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(null);
     const [activeImage, setActiveImage] = useState(0);
-    const [user, setUser] = useState(null);
 
-    useEffect(() => {
-        const checkUser = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user || null);
-        };
-        checkUser();
-    }, []);
+    useDocumentMeta(
+        property?.titulo,
+        property?.descripcion
+            ? property.descripcion.slice(0, 155)
+            : 'Detalle de propiedad — GARDET Propiedades'
+    );
 
     useEffect(() => {
         const fetchProperty = async () => {
+            setFetchError(null);
             try {
-                // Fetch property with all related data
+                // Public detail: only published listings (owners manage drafts in dashboard)
                 const { data, error } = await supabase
                     .from('propiedades')
-                    .select(`
-                        *,
-                        propiedades_imagenes (
-                            url,
-                            es_portada,
-                            orden
-                        ),
-                        tipos_propiedad (
-                            id,
-                            nombre
-                        ),
-                        tipos_operacion (
-                            id,
-                            nombre
-                        ),
-                        comunas (
-                            id,
-                            nombre,
-                            regiones (
-                                id,
-                                nombre
-                            )
-                        )
-                    `)
+                    .select(PROPERTY_DETAIL_SELECT)
                     .eq('id', id)
+                    .eq('estado', 'publicada')
                     .single();
 
                 if (error) throw error;
 
                 setProperty(data);
-
-                // Ubicación desactivada temporalmente (Google Maps stand-by)
-
             } catch (error) {
                 console.error('Error fetching property:', error.message);
+                setProperty(null);
+                setFetchError(error.message);
             } finally {
                 setLoading(false);
             }
@@ -81,21 +62,6 @@ const PropertyDetail = () => {
 
         fetchProperty();
     }, [id]);
-
-    const getEstadoBadgeColor = (estado) => {
-        switch (estado) {
-            case 'publicada':
-                return 'bg-green-500/20 text-green-400 border-green-500/30';
-            case 'vendida':
-                return 'bg-gold/20 text-gold border-gold/30';
-            case 'arrendada':
-                return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-            case 'borrador':
-                return 'bg-ivory/10 text-ivory/50 border-ivory/20';
-            default:
-                return 'bg-ivory/10 text-ivory/50 border-ivory/20';
-        }
-    };
 
     const nextImage = () => {
         const images = property?.propiedades_imagenes || [];
@@ -109,7 +75,6 @@ const PropertyDetail = () => {
 
     const handleBack = () => {
         const referrer = document.referrer || '';
-        // If there's internal history stack within this tab
         if (window.history.state && window.history.state.idx > 0) {
             navigate(-1);
         } else if (referrer.includes('/dashboard') || user) {
@@ -139,7 +104,12 @@ const PropertyDetail = () => {
             <div className="min-h-screen bg-obsidian flex items-center justify-center pt-20">
                 <div className="text-center">
                     <h2 className="title-editorial text-3xl text-ivory mb-3">Propiedad no encontrada</h2>
-                    <p className="text-ivory/40 font-jakarta mb-6">La propiedad que buscas no existe o fue eliminada.</p>
+                    <p className="text-ivory/40 font-jakarta mb-6">
+                        La propiedad que buscas no existe, no está publicada o fue eliminada.
+                    </p>
+                    {fetchError && (
+                        <p className="text-red-400/80 font-jakarta text-xs mb-4">{fetchError}</p>
+                    )}
                     <button onClick={handleBack} className="btn-gold-outline text-sm px-6 py-2.5">
                         Volver
                     </button>
@@ -150,6 +120,8 @@ const PropertyDetail = () => {
 
     const images = property.propiedades_imagenes?.sort((a, b) => a.orden - b.orden) || [];
     const currentImage = images[activeImage]?.url || null;
+    const mailtoHref = propertyInquiryMailto(property.titulo, property.id);
+    const whatsappHref = propertyInquiryWhatsApp(property.titulo, property.id);
 
     return (
         <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8">
@@ -193,7 +165,7 @@ const PropertyDetail = () => {
                                 )}
 
                                 {/* Estado Badge */}
-                                <div className={`absolute top-6 right-6 px-4 py-1.5 text-sm font-jakarta font-medium border shadow-lg z-10 ${getEstadoBadgeColor(property.estado)}`}>
+                                <div className={`absolute top-6 right-6 px-4 py-1.5 text-sm font-jakarta font-medium border shadow-lg z-10 ${getEstadoBadgeClasses(property.estado)}`}>
                                     {property.estado?.charAt(0).toUpperCase() + property.estado?.slice(1)}
                                 </div>
 
@@ -223,7 +195,7 @@ const PropertyDetail = () => {
                                 )}
                             </div>
 
-                            {/* Image Thumbnails Strip - In-Flow Container */}
+                            {/* Image Thumbnails Strip */}
                             {images.length > 1 && (
                                 <div className="bg-[#141416] border-t border-gold/20 p-3 px-6 flex items-center justify-center gap-3 overflow-x-auto">
                                     {images.map((img, index) => (
@@ -329,7 +301,6 @@ const PropertyDetail = () => {
                                         Ubicación
                                     </h3>
 
-                                    {/* Google Maps desactivado temporalmente */}
                                     <div className="h-[250px] bg-[#1C1C1E] rounded-lg flex items-center justify-center border border-gold/15">
                                         <div className="text-center text-slate-400">
                                             <MapPin className="h-10 w-10 mx-auto mb-2 text-gold/60" />
@@ -365,9 +336,22 @@ const PropertyDetail = () => {
                                     <p className="text-obsidian/90 mb-5 text-sm font-jakarta font-medium">
                                         Contáctanos para más información o agendar una visita exclusiva.
                                     </p>
-                                    <button className="w-full bg-obsidian text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer">
-                                        Contactar
-                                    </button>
+                                    <div className="space-y-2">
+                                        <a
+                                            href={mailtoHref}
+                                            className="block w-full text-center bg-obsidian text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl"
+                                        >
+                                            Contactar por email
+                                        </a>
+                                        <a
+                                            href={whatsappHref}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block w-full text-center bg-obsidian/80 text-gold font-jakarta font-semibold py-2.5 px-4 text-xs tracking-wider uppercase hover:bg-obsidian transition-colors rounded-xl border border-obsidian/20"
+                                        >
+                                            WhatsApp
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>

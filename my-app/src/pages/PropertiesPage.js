@@ -2,16 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
+import { PROPERTY_LIST_SELECT } from '../lib/propertyHelpers';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const PropertiesPage = ({ operationType }) => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [title, setTitle] = useState('');
     const [searchParams] = useSearchParams();
+
+    const pageTitle = title || (operationType ? `Propiedades en ${operationType}` : 'Resultados de Búsqueda');
+    useDocumentMeta(pageTitle, `Catálogo de propiedades ${operationType || 'en venta y arriendo'} — GARDET Propiedades`);
 
     useEffect(() => {
         const fetchProperties = async () => {
             setLoading(true);
+            setError(null);
             try {
                 // Read filters from query params
                 const qOperacion = searchParams.get('operacion');
@@ -69,26 +76,7 @@ const PropertiesPage = ({ operationType }) => {
                 // Build query
                 let query = supabase
                     .from('propiedades')
-                    .select(`
-                        *,
-                        propiedades_imagenes (
-                            url,
-                            es_portada
-                        ),
-                        tipos_propiedad (
-                            id,
-                            nombre
-                        ),
-                        tipos_operacion (
-                            id,
-                            nombre
-                        ),
-                        comunas (
-                            id,
-                            nombre,
-                            region_id
-                        )
-                    `)
+                    .select(PROPERTY_LIST_SELECT)
                     .eq('estado', 'publicada');
 
                 // Apply filters
@@ -139,6 +127,7 @@ const PropertiesPage = ({ operationType }) => {
             } catch (error) {
                 console.error('Error fetching properties:', error.message);
                 setProperties([]);
+                setError(error.message || 'No se pudieron cargar las propiedades');
             } finally {
                 setLoading(false);
             }
@@ -184,6 +173,12 @@ const PropertiesPage = ({ operationType }) => {
                     <div className="text-center py-16">
                         <div className="inline-block w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin"></div>
                         <p className="mt-4 text-ivory/40 font-jakarta text-sm">Cargando propiedades...</p>
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-16">
+                        <p className="text-red-400 font-jakarta text-sm bg-red-400/10 border border-red-400/20 rounded-lg inline-block px-4 py-3">
+                            {error}
+                        </p>
                     </div>
                 ) : properties.length === 0 ? (
                     <div className="text-center py-16">
