@@ -56,10 +56,13 @@ module.exports = {
                 'gardet-muted': '#94A3B8',
             },
             fontFamily: {
+                // Primary UI sans: Lato
+                sans: ['"Lato"', 'sans-serif'],
                 lato: ['"Lato"', 'sans-serif'],
                 jakarta: ['"Lato"', 'sans-serif'],
+                // Display / editorial: Ysabeau SC
                 ysabeau: ['"Ysabeau SC"', 'sans-serif'],
-                cormorant: ['"Ysabeau SC"', 'sans-serif'],
+                display: ['"Ysabeau SC"', 'sans-serif'],
             },
             letterSpacing: {
                 'brand': '1.5px',

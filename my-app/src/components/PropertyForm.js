@@ -1,11 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-// LocationPicker desactivado temporalmente (Google Maps stand-by)
 import { Upload, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '../auth/AuthProvider';
+import { fetchComunasByRegion } from '../lib/propertyHelpers';
+import { validateImageFile } from '../lib/imageUpload';
+
+const EMPTY_OPTIONAL_NUMBER = '';
+
+/**
+ * Parses a required positive number; returns null if invalid/empty.
+ */
+function parseRequiredNumber(value) {
+    if (value === '' || value === null || value === undefined) return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Parses optional number fields (empty → null, not NaN).
+ */
+function parseOptionalNumber(value) {
+    if (value === '' || value === null || value === undefined) return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Manual form validation before insert/update.
+ */
+function validatePropertyForm(formData) {
+    const errors = {};
+
+    if (!formData.titulo?.trim()) errors.titulo = 'El título es obligatorio';
+    if (!formData.descripcion?.trim()) errors.descripcion = 'La descripción es obligatoria';
+    if (!formData.direccion_referencial?.trim()) errors.direccion_referencial = 'La dirección es obligatoria';
+    if (!formData.tipo_propiedad_id) errors.tipo_propiedad_id = 'Selecciona un tipo de propiedad';
+    if (!formData.operacion_id) errors.operacion_id = 'Selecciona un tipo de operación';
+    if (!formData.region_id) errors.region_id = 'Selecciona una región';
+    if (!formData.comuna_id) errors.comuna_id = 'Selecciona una comuna';
+    if (!formData.estado) errors.estado = 'Selecciona un estado';
+
+    const precio = parseRequiredNumber(formData.precio_uf);
+    if (precio === null || precio < 0) errors.precio_uf = 'Ingresa un precio válido en UF';
+
+    const mt2c = parseRequiredNumber(formData.mt2_construidos);
+    if (mt2c === null || mt2c <= 0) errors.mt2_construidos = 'Ingresa m² construidos válidos';
+
+    if (formData.mt2_terreno !== EMPTY_OPTIONAL_NUMBER && formData.mt2_terreno !== '') {
+        const mt2t = parseOptionalNumber(formData.mt2_terreno);
+        if (mt2t === null || mt2t < 0) errors.mt2_terreno = 'Ingresa m² de terreno válidos';
+    }
+
+    const hab = parseRequiredNumber(formData.habitaciones);
+    if (hab === null || hab < 0 || !Number.isInteger(hab)) errors.habitaciones = 'Ingresa un número válido de habitaciones';
+
+    const banos = parseRequiredNumber(formData.banos);
+    if (banos === null || banos < 0 || !Number.isInteger(banos)) errors.banos = 'Ingresa un número válido de baños';
+
+    return errors;
+}
 
 const PropertyForm = ({ property, onSave, onCancel }) => {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [formError, setFormError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
     const [formData, setFormData] = useState({
         titulo: '',
         descripcion: '',
@@ -32,7 +92,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
 
     const [images, setImages] = useState([]);
 
-    // Load dropdown data
     useEffect(() => {
         const loadDropdowns = async () => {
             try {
@@ -50,36 +109,33 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 });
             } catch (error) {
                 console.error('Error loading dropdowns:', error);
+                setFormError('No se pudieron cargar los catálogos del formulario');
             }
         };
 
         loadDropdowns();
     }, []);
 
-    // Load comunas when region changes
     useEffect(() => {
         const loadComunas = async () => {
-            if (formData.region_id) {
-                const { data } = await supabase
-                    .from('comunas')
-                    .select('*')
-                    .eq('region_id', formData.region_id)
-                    .order('nombre');
-
-                setDropdownData(prev => ({ ...prev, comunas: data || [] }));
-            } else {
-                setDropdownData(prev => ({ ...prev, comunas: [] }));
+            try {
+                if (formData.region_id) {
+                    const data = await fetchComunasByRegion(supabase, formData.region_id);
+                    setDropdownData(prev => ({ ...prev, comunas: data }));
+                } else {
+                    setDropdownData(prev => ({ ...prev, comunas: [] }));
+                }
+            } catch (error) {
+                console.error('Error loading comunas:', error);
             }
         };
 
         loadComunas();
     }, [formData.region_id]);
 
-    // Load property data if editing
     useEffect(() => {
         const loadPropertyData = async () => {
             if (property) {
-                // Get region_id from comuna if comuna_id exists
                 let regionId = '';
                 if (property.comuna_id) {
                     const { data: comunaData } = await supabase
@@ -96,11 +152,11 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 setFormData({
                     titulo: property.titulo || '',
                     descripcion: property.descripcion || '',
-                    precio_uf: property.precio_uf || '',
-                    mt2_construidos: property.mt2_construidos || '',
-                    mt2_terreno: property.mt2_terreno || '',
-                    habitaciones: property.habitaciones || '',
-                    banos: property.banos || '',
+                    precio_uf: property.precio_uf ?? '',
+                    mt2_construidos: property.mt2_construidos ?? '',
+                    mt2_terreno: property.mt2_terreno ?? '',
+                    habitaciones: property.habitaciones ?? '',
+                    banos: property.banos ?? '',
                     direccion_referencial: property.direccion_referencial || '',
                     estado: property.estado || 'borrador',
                     tipo_propiedad_id: property.tipo_propiedad_id || '',
@@ -112,7 +168,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         : null
                 });
 
-                // Load existing images
                 if (property.propiedades_imagenes) {
                     setImages(property.propiedades_imagenes);
                 }
@@ -125,30 +180,49 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // Reset comuna when region changes
         if (name === 'region_id') {
             setFormData(prev => ({ ...prev, region_id: value, comuna_id: '' }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
+
+        setFieldErrors(prev => {
+            if (!prev[name]) return prev;
+            const next = { ...prev };
+            delete next[name];
+            return next;
+        });
     };
 
     const handleImageSelect = (e) => {
-        const files = Array.from(e.target.files);
+        const files = Array.from(e.target.files || []);
+        e.target.value = '';
 
-        // Create previews
+        const rejected = [];
+
         files.forEach(file => {
+            const result = validateImageFile(file);
+            if (!result.ok) {
+                rejected.push(`${file.name}: ${result.error}`);
+                return;
+            }
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImages(prev => [...prev, {
                     url: reader.result,
-                    file: file,
+                    file,
+                    mimeExt: result.ext,
                     isNew: true,
-                    es_portada: prev.length === 0 // First image is cover
+                    es_portada: prev.length === 0
                 }]);
             };
             reader.readAsDataURL(file);
         });
+
+        if (rejected.length > 0) {
+            setFormError(rejected.join(' · '));
+        }
     };
 
     const handleRemoveImage = (index) => {
@@ -165,7 +239,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
     const uploadImages = async (propiedadId) => {
         const uploadedImages = [];
 
-        // If no images, return empty array
         if (images.length === 0) {
             return uploadedImages;
         }
@@ -175,16 +248,24 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
 
             if (image.isNew && image.file) {
                 try {
-                    const fileExt = image.file.name.split('.').pop();
-                    const fileName = `${propiedadId}/${uuidv4()}.${fileExt}`;
+                    const validation = validateImageFile(image.file);
+                    if (!validation.ok) {
+                        console.warn('Skipping invalid image:', validation.error);
+                        continue;
+                    }
+
+                    // Extension from MIME, not from untrusted filename
+                    const fileName = `${propiedadId}/${uuidv4()}.${validation.ext}`;
 
                     const { error: uploadError } = await supabase.storage
                         .from('propiedades')
-                        .upload(fileName, image.file);
+                        .upload(fileName, image.file, {
+                            contentType: image.file.type,
+                            upsert: false
+                        });
 
                     if (uploadError) {
                         console.error('Upload error:', uploadError);
-                        // Skip this image if bucket doesn't exist
                         if (uploadError.message.includes('Bucket not found')) {
                             console.warn('Storage bucket "propiedades" not found. Skipping image upload.');
                             continue;
@@ -204,10 +285,8 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                     });
                 } catch (error) {
                     console.error('Error uploading image:', error);
-                    // Continue with other images
                 }
             } else if (!image.isNew) {
-                // Keep existing images
                 uploadedImages.push({
                     propiedad_id: propiedadId,
                     url: image.url,
@@ -222,42 +301,54 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setFormError(null);
+
+        if (!user?.id) {
+            setFormError('Debes iniciar sesión para guardar una propiedad');
+            return;
+        }
+
+        const errors = validatePropertyForm(formData);
+        setFieldErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            setFormError('Revisa los campos marcados antes de guardar');
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-
-            // Prepare property data
+            // Never trust client-supplied user_id for takeover; set from auth only
             const propertyData = {
-                ...formData,
-                user_id: user.id,
-                precio_uf: parseFloat(formData.precio_uf),
-                mt2_construidos: parseFloat(formData.mt2_construidos),
-                mt2_terreno: parseFloat(formData.mt2_terreno),
-                habitaciones: parseInt(formData.habitaciones),
-                banos: parseInt(formData.banos)
+                titulo: formData.titulo.trim(),
+                descripcion: formData.descripcion.trim(),
+                direccion_referencial: formData.direccion_referencial.trim(),
+                estado: formData.estado,
+                tipo_propiedad_id: formData.tipo_propiedad_id,
+                operacion_id: formData.operacion_id,
+                comuna_id: formData.comuna_id,
+                precio_uf: parseRequiredNumber(formData.precio_uf),
+                mt2_construidos: parseRequiredNumber(formData.mt2_construidos),
+                mt2_terreno: parseOptionalNumber(formData.mt2_terreno),
+                habitaciones: parseRequiredNumber(formData.habitaciones),
+                banos: parseRequiredNumber(formData.banos),
             };
-
-            // Remove fields that don't exist in propiedades table
-            delete propertyData.ubicacion; // Will use RPC for PostGIS
-            delete propertyData.region_id; // Region is indirect through comuna
 
             let propiedadId;
 
             if (property) {
-                // Update existing property
                 const { error } = await supabase
                     .from('propiedades')
                     .update(propertyData)
-                    .eq('id', property.id);
+                    .eq('id', property.id)
+                    .eq('user_id', user.id);
 
                 if (error) throw error;
                 propiedadId = property.id;
             } else {
-                // Create new property
                 const { data, error } = await supabase
                     .from('propiedades')
-                    .insert([propertyData])
+                    .insert([{ ...propertyData, user_id: user.id }])
                     .select()
                     .single();
 
@@ -265,7 +356,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 propiedadId = data.id;
             }
 
-            // Update location using PostGIS if provided
             if (formData.ubicacion) {
                 const { error: locationError } = await supabase.rpc('update_property_location', {
                     property_id: propiedadId,
@@ -278,10 +368,8 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 }
             }
 
-            // Upload images
             const uploadedImages = await uploadImages(propiedadId);
 
-            // Delete old images
             if (property) {
                 await supabase
                     .from('propiedades_imagenes')
@@ -289,7 +377,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                     .eq('propiedad_id', propiedadId);
             }
 
-            // Insert new image records
             if (uploadedImages.length > 0) {
                 const { error: imageError } = await supabase
                     .from('propiedades_imagenes')
@@ -301,20 +388,27 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
             onSave();
         } catch (error) {
             console.error('Error saving property:', error);
-            alert('Error al guardar la propiedad: ' + error.message);
+            setFormError('Error al guardar la propiedad: ' + error.message);
         } finally {
             setLoading(false);
         }
     };
 
     const labelClass = "block text-sm font-jakarta font-medium text-ivory/70 mb-1.5";
+    const fieldErrorClass = "mt-1 text-xs text-red-400 font-jakarta";
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 card-dark rounded-xl p-6 lg:p-8">
+        <form onSubmit={handleSubmit} className="space-y-6 card-dark rounded-xl p-6 lg:p-8" noValidate>
             <h2 className="title-editorial text-2xl text-ivory">
                 {property ? 'Editar Propiedad' : 'Nueva Propiedad'}
             </h2>
             <div className="gold-line"></div>
+
+            {formError && (
+                <div className="rounded-lg px-4 py-3 text-sm font-jakarta bg-red-400/10 border border-red-400/30 text-red-400">
+                    {formError}
+                </div>
+            )}
 
             {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -325,9 +419,9 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="titulo"
                         value={formData.titulo}
                         onChange={handleChange}
-                        required
                         className="input-dark"
                     />
+                    {fieldErrors.titulo && <p className={fieldErrorClass}>{fieldErrors.titulo}</p>}
                 </div>
 
                 <div>
@@ -337,10 +431,10 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="precio_uf"
                         value={formData.precio_uf}
                         onChange={handleChange}
-                        required
                         step="0.01"
                         className="input-dark"
                     />
+                    {fieldErrors.precio_uf && <p className={fieldErrorClass}>{fieldErrors.precio_uf}</p>}
                 </div>
 
                 <div>
@@ -349,7 +443,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="tipo_propiedad_id"
                         value={formData.tipo_propiedad_id}
                         onChange={handleChange}
-                        required
                         className="select-dark"
                     >
                         <option value="">Seleccionar...</option>
@@ -357,6 +450,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                             <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
                         ))}
                     </select>
+                    {fieldErrors.tipo_propiedad_id && <p className={fieldErrorClass}>{fieldErrors.tipo_propiedad_id}</p>}
                 </div>
 
                 <div>
@@ -365,7 +459,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="operacion_id"
                         value={formData.operacion_id}
                         onChange={handleChange}
-                        required
                         className="select-dark"
                     >
                         <option value="">Seleccionar...</option>
@@ -373,6 +466,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                             <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
                         ))}
                     </select>
+                    {fieldErrors.operacion_id && <p className={fieldErrorClass}>{fieldErrors.operacion_id}</p>}
                 </div>
 
                 <div>
@@ -382,10 +476,10 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="mt2_construidos"
                         value={formData.mt2_construidos}
                         onChange={handleChange}
-                        required
                         step="0.01"
                         className="input-dark"
                     />
+                    {fieldErrors.mt2_construidos && <p className={fieldErrorClass}>{fieldErrors.mt2_construidos}</p>}
                 </div>
 
                 <div>
@@ -398,6 +492,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         step="0.01"
                         className="input-dark"
                     />
+                    {fieldErrors.mt2_terreno && <p className={fieldErrorClass}>{fieldErrors.mt2_terreno}</p>}
                 </div>
 
                 <div>
@@ -407,9 +502,9 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="habitaciones"
                         value={formData.habitaciones}
                         onChange={handleChange}
-                        required
                         className="input-dark"
                     />
+                    {fieldErrors.habitaciones && <p className={fieldErrorClass}>{fieldErrors.habitaciones}</p>}
                 </div>
 
                 <div>
@@ -419,9 +514,9 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="banos"
                         value={formData.banos}
                         onChange={handleChange}
-                        required
                         className="input-dark"
                     />
+                    {fieldErrors.banos && <p className={fieldErrorClass}>{fieldErrors.banos}</p>}
                 </div>
 
                 <div>
@@ -430,7 +525,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="estado"
                         value={formData.estado}
                         onChange={handleChange}
-                        required
                         className="select-dark"
                     >
                         <option value="borrador">Borrador</option>
@@ -438,6 +532,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         <option value="vendida">Vendida</option>
                         <option value="arrendada">Arrendada</option>
                     </select>
+                    {fieldErrors.estado && <p className={fieldErrorClass}>{fieldErrors.estado}</p>}
                 </div>
 
                 <div>
@@ -446,7 +541,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="region_id"
                         value={formData.region_id}
                         onChange={handleChange}
-                        required
                         className="select-dark"
                     >
                         <option value="">Seleccionar...</option>
@@ -454,6 +548,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                             <option key={region.id} value={region.id}>{region.nombre}</option>
                         ))}
                     </select>
+                    {fieldErrors.region_id && <p className={fieldErrorClass}>{fieldErrors.region_id}</p>}
                 </div>
 
                 <div>
@@ -462,7 +557,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="comuna_id"
                         value={formData.comuna_id}
                         onChange={handleChange}
-                        required
                         disabled={!formData.region_id}
                         className="select-dark disabled:opacity-40"
                     >
@@ -471,6 +565,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                             <option key={comuna.id} value={comuna.id}>{comuna.nombre}</option>
                         ))}
                     </select>
+                    {fieldErrors.comuna_id && <p className={fieldErrorClass}>{fieldErrors.comuna_id}</p>}
                 </div>
             </div>
 
@@ -481,10 +576,10 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                     name="direccion_referencial"
                     value={formData.direccion_referencial}
                     onChange={handleChange}
-                    required
                     className="input-dark"
                     placeholder="Ingresa la dirección de la propiedad"
                 />
+                {fieldErrors.direccion_referencial && <p className={fieldErrorClass}>{fieldErrors.direccion_referencial}</p>}
             </div>
 
             <div>
@@ -493,10 +588,10 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                     name="descripcion"
                     value={formData.descripcion}
                     onChange={handleChange}
-                    required
                     rows={4}
                     className="input-dark resize-none"
                 />
+                {fieldErrors.descripcion && <p className={fieldErrorClass}>{fieldErrors.descripcion}</p>}
             </div>
 
             {/* Location Picker - Google Maps desactivado temporalmente */}
@@ -507,7 +602,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
 
             {/* Image Upload */}
             <div>
-                <label className={labelClass}>Imágenes</label>
+                <label className={labelClass}>Imágenes (JPEG, PNG o WebP · máx. 5 MB)</label>
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border border-dashed border-obsidian-50/20 rounded-lg hover:border-gold/30 transition-colors cursor-pointer">
                     <div className="space-y-1 text-center">
                         <Upload className="mx-auto h-10 w-10 text-ivory/20" />
@@ -518,7 +613,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                                     type="file"
                                     className="sr-only"
                                     multiple
-                                    accept="image/*"
+                                    accept="image/jpeg,image/png,image/webp"
                                     onChange={handleImageSelect}
                                 />
                             </label>
@@ -526,7 +621,6 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                     </div>
                 </div>
 
-                {/* Image Previews */}
                 {images.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                         {images.map((image, index) => (

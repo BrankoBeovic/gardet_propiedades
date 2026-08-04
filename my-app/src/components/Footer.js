@@ -1,25 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { LogIn, LayoutDashboard } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { useAuth } from '../auth/AuthProvider';
 
 const Footer = () => {
-    const [user, setUser] = useState(null);
-
-    useEffect(() => {
-        const checkUser = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user || null);
-        };
-
-        checkUser();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user || null);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
+    const { user } = useAuth();
 
     return (
         <footer className="bg-[#141416] relative z-20 border-t border-gold/20 shadow-2xl">

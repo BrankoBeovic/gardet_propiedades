@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -8,6 +9,8 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+
+    useDocumentMeta('Acceso', 'Acceso privado al panel de GARDET Propiedades.');
 
     const handleLogin = async (e) => {
         e.preventDefault();

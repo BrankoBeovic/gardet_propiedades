@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Edit, Trash2, Eye } from 'lucide-react';
+import { getEstadoBadgeClasses } from '../lib/propertyHelpers';
 
 const PropertyList = ({ properties, onEdit, onDelete, loading }) => {
     if (loading) {
@@ -20,15 +21,6 @@ const PropertyList = ({ properties, onEdit, onDelete, loading }) => {
         );
     }
 
-    const getEstadoBadge = (estado) => {
-        const colors = {
-            borrador: 'bg-ivory/10 text-ivory/60 border-ivory/20',
-            publicada: 'bg-green-500/15 text-green-400 border-green-500/20',
-            vendida: 'bg-gold/15 text-gold border-gold/20',
-            arrendada: 'bg-purple-500/15 text-purple-400 border-purple-500/20'
-        };
-        return colors[estado] || 'bg-ivory/10 text-ivory/60 border-ivory/20';
-    };
 
     return (
         <div className="overflow-x-auto">
@@ -60,18 +52,20 @@ const PropertyList = ({ properties, onEdit, onDelete, loading }) => {
                                 <div className="text-sm font-jakarta text-gold font-semibold">UF {property.precio_uf?.toLocaleString()}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-3 py-1 inline-flex text-xs font-jakarta font-medium border ${getEstadoBadge(property.estado)}`}>
+                                <span className={`px-3 py-1 inline-flex text-xs font-jakarta font-medium border ${getEstadoBadgeClasses(property.estado)}`}>
                                     {property.estado}
                                 </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
-                                <Link
-                                    to={`/propiedad/${property.id}`}
-                                    className="text-ivory/40 hover:text-gold transition-colors inline-block"
-                                    title="Ver"
-                                >
-                                    <Eye className="h-4 w-4 inline" />
-                                </Link>
+                                {property.estado === 'publicada' && (
+                                    <Link
+                                        to={`/propiedad/${property.id}`}
+                                        className="text-ivory/40 hover:text-gold transition-colors inline-block"
+                                        title="Ver"
+                                    >
+                                        <Eye className="h-4 w-4 inline" />
+                                    </Link>
+                                )}
                                 <button
                                     onClick={() => onEdit(property)}
                                     className="text-ivory/40 hover:text-gold transition-colors"

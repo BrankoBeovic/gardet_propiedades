@@ -2,44 +2,37 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { Plus, List, ArrowLeft, LogOut } from 'lucide-react';
+import { useAuth } from '../auth/AuthProvider';
+import { PROPERTY_DASHBOARD_SELECT } from '../lib/propertyHelpers';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import PropertyList from '../components/PropertyList';
 import PropertyForm from '../components/PropertyForm';
 
 const Dashboard = () => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { user, loading: authLoading, signOut } = useAuth();
     const [properties, setProperties] = useState([]);
+    const [listLoading, setListLoading] = useState(true);
+    const [listError, setListError] = useState(null);
+    const [feedback, setFeedback] = useState(null);
     const [activeView, setActiveView] = useState('list'); // 'list', 'create', or 'edit'
     const [editingProperty, setEditingProperty] = useState(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const checkUser = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                navigate('/login');
-            } else {
-                setUser(session.user);
-                loadProperties(session.user.id);
-            }
-            setLoading(false);
-        };
+    useDocumentMeta('Dashboard', 'Panel de administración de propiedades GARDET.');
 
-        checkUser();
-    }, [navigate]);
+    useEffect(() => {
+        if (!authLoading && user) {
+            loadProperties(user.id);
+        }
+    }, [authLoading, user]);
 
     const loadProperties = async (userId) => {
+        setListLoading(true);
+        setListError(null);
         try {
             const { data, error } = await supabase
                 .from('propiedades')
-                .select(`
-          *,
-          propiedades_imagenes (
-            url,
-            es_portada,
-            orden
-          )
-        `)
+                .select(PROPERTY_DASHBOARD_SELECT)
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false });
 
@@ -71,17 +64,21 @@ const Dashboard = () => {
             setProperties(enrichedProperties);
         } catch (error) {
             console.error('Error loading properties:', error);
+            setListError(error.message || 'No se pudieron cargar las propiedades');
+        } finally {
+            setListLoading(false);
         }
     };
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await signOut();
         navigate('/login');
     };
 
     const handleEdit = (property) => {
         setEditingProperty(property);
         setActiveView('edit');
+        setFeedback(null);
     };
 
     const handleDelete = async (propertyId) => {
@@ -89,6 +86,7 @@ const Dashboard = () => {
             return;
         }
 
+        setFeedback(null);
         try {
             // Delete images from storage first
             const { data: images } = await supabase
@@ -98,7 +96,6 @@ const Dashboard = () => {
 
             if (images) {
                 for (const image of images) {
-                    // Extract file path from URL
                     const urlParts = image.url.split('/');
                     const fileName = urlParts[urlParts.length - 1];
                     const folderName = urlParts[urlParts.length - 2];
@@ -109,26 +106,25 @@ const Dashboard = () => {
                 }
             }
 
-            // Delete image records
             await supabase
                 .from('propiedades_imagenes')
                 .delete()
                 .eq('propiedad_id', propertyId);
 
-            // Delete property
+            // Scope delete to current owner — do not trust id alone
             const { error } = await supabase
                 .from('propiedades')
                 .delete()
-                .eq('id', propertyId);
+                .eq('id', propertyId)
+                .eq('user_id', user.id);
 
             if (error) throw error;
 
-            // Reload properties
             loadProperties(user.id);
-            alert('Propiedad eliminada exitosamente');
+            setFeedback({ type: 'success', message: 'Propiedad eliminada exitosamente' });
         } catch (error) {
             console.error('Error deleting property:', error);
-            alert('Error al eliminar la propiedad: ' + error.message);
+            setFeedback({ type: 'error', message: 'Error al eliminar la propiedad: ' + error.message });
         }
     };
 
@@ -136,6 +132,7 @@ const Dashboard = () => {
         loadProperties(user.id);
         setActiveView('list');
         setEditingProperty(null);
+        setFeedback({ type: 'success', message: 'Propiedad guardada correctamente' });
     };
 
     const handleCancel = () => {
@@ -146,6 +143,7 @@ const Dashboard = () => {
     const handleNewProperty = () => {
         setEditingProperty(null);
         setActiveView('create');
+        setFeedback(null);
     };
 
     const handleBackToList = () => {
@@ -153,7 +151,7 @@ const Dashboard = () => {
         setEditingProperty(null);
     };
 
-    if (loading) return (
+    if (authLoading) return (
         <div className="min-h-screen flex items-center justify-center pt-20">
             <div className="text-center">
                 <div className="inline-block w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin"></div>
@@ -186,9 +184,20 @@ const Dashboard = () => {
                     <p className="text-sm text-ivory/60 font-jakarta">{user?.email}</p>
                 </div>
 
+                {feedback && (
+                    <div
+                        className={`mb-6 rounded-lg px-4 py-3 text-sm font-jakarta border ${
+                            feedback.type === 'success'
+                                ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                                : 'bg-red-400/10 border-red-400/30 text-red-400'
+                        }`}
+                    >
+                        {feedback.message}
+                    </div>
+                )}
+
                 {/* Navigation */}
                 {activeView === 'edit' ? (
-                    // Edit Mode Header
                     <div className="mb-6">
                         <button
                             onClick={handleBackToList}
@@ -207,7 +216,6 @@ const Dashboard = () => {
                         </div>
                     </div>
                 ) : (
-                    // Tabs for List and Create
                     <div className="mb-6">
                         <div className="border-b border-obsidian-50/10">
                             <nav className="-mb-px flex space-x-8">
@@ -239,11 +247,16 @@ const Dashboard = () => {
                 {/* Content */}
                 {activeView === 'list' ? (
                     <div className="card-dark rounded-lg overflow-hidden">
+                        {listError && (
+                            <div className="m-4 rounded-lg px-4 py-3 text-sm font-jakarta bg-red-400/10 border border-red-400/30 text-red-400">
+                                {listError}
+                            </div>
+                        )}
                         <PropertyList
                             properties={properties}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
-                            loading={false}
+                            loading={listLoading}
                         />
                     </div>
                 ) : (
