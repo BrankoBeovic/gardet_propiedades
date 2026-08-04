@@ -1,70 +1,59 @@
-# Getting Started with Create React App
+# GARDET Propiedades
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+SPA de corredora inmobiliaria (Create React App + React Router v7 + Supabase + Tailwind).
 
-## Available Scripts
+## Requisitos
 
-In the project directory, you can run:
+- Node.js 18+
+- Proyecto Supabase con las tablas/funciones del negocio
 
-### `npm start`
+## Configuración
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. Entra a `my-app/`:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+cd my-app
+npm install
+```
 
-### `npm test`
+2. Copia las variables de entorno:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+cp .env.example .env
+```
 
-### `npm run build`
+3. Completa `.env` (ver `.env.example`):
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+| Variable | Descripción |
+|---|---|
+| `PORT` | Puerto de desarrollo (por defecto **5500**) |
+| `REACT_APP_SUPABASE_URL` | URL del proyecto Supabase |
+| `REACT_APP_SUPABASE_ANON_KEY` | Anon/public key de Supabase |
+| `REACT_APP_GOOGLE_MAPS_API_KEY` | Opcional; mapas aún no cableados en el formulario |
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+4. Aplica seguridad en Supabase (SQL Editor), en este orden:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- `supabase_rls.sql` — RLS, policies de tablas y storage bucket `propiedades`
+- `supabase_functions.sql` — RPCs PostGIS con chequeo de ownership
 
-### `npm run eject`
+Verifica en el dashboard que RLS esté activo en `propiedades` y `propiedades_imagenes`.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Scripts
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm start   # http://localhost:5500 (si PORT=5500 en .env)
+npm test
+npm run build
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Estructura relevante
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- `src/auth/` — AuthProvider / useAuth
+- `src/pages/` — Home, listados, detalle, login, dashboard
+- `src/components/` — UI compartida + ProtectedRoute
+- `src/lib/` — helpers de propiedades e uploads
+- `src/constants/contact.js` — placeholders de contacto (mailto / WhatsApp)
 
-## Learn More
+## Contacto en la UI
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Los CTAs usan placeholders en `src/constants/contact.js` (`contacto@gardetpropiedades.cl`). Actualízalos con datos reales del negocio.

@@ -17,58 +17,46 @@ import {
     MessageCircle
 } from 'lucide-react';
 import { queueReturnScroll } from '../utils/scrollMemory';
-// Google Maps desactivado temporalmente
-
-const WHATSAPP_NUMBER = process.env.REACT_APP_WHATSAPP_NUMBER || '56987829204';
+import { useAuth } from '../auth/AuthProvider';
+import { PROPERTY_DETAIL_SELECT, getEstadoBadgeClasses } from '../lib/propertyHelpers';
+import { propertyInquiryWhatsApp } from '../constants/contact';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const PropertyDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(null);
     const [activeImage, setActiveImage] = useState(0);
+
+    useDocumentMeta(
+        property?.titulo,
+        property?.descripcion
+            ? property.descripcion.slice(0, 155)
+            : 'Detalle de propiedad — GARDET Propiedades'
+    );
 
     useEffect(() => {
         const fetchProperty = async () => {
+            setFetchError(null);
             try {
-                // Fetch property with all related data
+                // Public detail: only published listings (owners manage drafts in dashboard)
                 const { data, error } = await supabase
                     .from('propiedades')
-                    .select(`
-                        *,
-                        propiedades_imagenes (
-                            url,
-                            es_portada,
-                            orden
-                        ),
-                        tipos_propiedad (
-                            id,
-                            nombre
-                        ),
-                        tipos_operacion (
-                            id,
-                            nombre
-                        ),
-                        comunas (
-                            id,
-                            nombre,
-                            regiones (
-                                id,
-                                nombre
-                            )
-                        )
-                    `)
+                    .select(PROPERTY_DETAIL_SELECT)
                     .eq('id', id)
+                    .eq('estado', 'publicada')
                     .single();
 
                 if (error) throw error;
 
                 setProperty(data);
-
-                // Ubicación desactivada temporalmente (Google Maps stand-by)
-
             } catch (error) {
                 console.error('Error fetching property:', error.message);
+                setProperty(null);
+                setFetchError(error.message);
             } finally {
                 setLoading(false);
             }
@@ -76,21 +64,6 @@ const PropertyDetail = () => {
 
         fetchProperty();
     }, [id]);
-
-    const getEstadoBadgeColor = (estado) => {
-        switch (estado) {
-            case 'publicada':
-                return 'bg-green-500/20 text-green-400 border-green-500/30';
-            case 'vendida':
-                return 'bg-gold/20 text-gold border-gold/30';
-            case 'arrendada':
-                return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-            case 'borrador':
-                return 'bg-ivory/10 text-ivory/50 border-ivory/20';
-            default:
-                return 'bg-ivory/10 text-ivory/50 border-ivory/20';
-        }
-    };
 
     const nextImage = () => {
         const images = property?.propiedades_imagenes || [];
@@ -104,15 +77,26 @@ const PropertyDetail = () => {
 
     const handleBack = () => {
         const saved = queueReturnScroll();
-
-        // Go back to the exact page we came from (with pending scroll queued)
         if (saved?.path) {
             navigate(saved.path);
             return;
         }
 
-        if (window.history.length > 1) {
+        const referrer = document.referrer || '';
+        if (window.history.state && window.history.state.idx > 0) {
             navigate(-1);
+            return;
+        }
+        if (referrer.includes('/dashboard') || user) {
+            navigate('/dashboard');
+            return;
+        }
+        if (referrer.includes('/arriendo')) {
+            navigate('/arriendo');
+            return;
+        }
+        if (referrer.includes('/venta')) {
+            navigate('/venta');
             return;
         }
 
@@ -135,7 +119,12 @@ const PropertyDetail = () => {
             <div className="min-h-screen bg-obsidian flex items-center justify-center pt-20">
                 <div className="text-center">
                     <h2 className="title-editorial text-3xl text-ivory mb-3">Propiedad no encontrada</h2>
-                    <p className="text-ivory/40 font-jakarta mb-6">La propiedad que buscas no existe o fue eliminada.</p>
+                    <p className="text-ivory/40 font-jakarta mb-6">
+                        La propiedad que buscas no existe, no está publicada o fue eliminada.
+                    </p>
+                    {fetchError && (
+                        <p className="text-red-400/80 font-jakarta text-xs mb-4">{fetchError}</p>
+                    )}
                     <button onClick={handleBack} className="btn-gold-outline text-sm px-6 py-2.5">
                         Volver
                     </button>
@@ -146,12 +135,12 @@ const PropertyDetail = () => {
 
     const images = property.propiedades_imagenes?.sort((a, b) => a.orden - b.orden) || [];
     const currentImage = images[activeImage]?.url || null;
+    const whatsappHref = propertyInquiryWhatsApp(property.titulo, property.id);
 
     const operacion = property.tipos_operacion?.nombre || 'Consulta';
     const propertyUrl = `${window.location.origin}/propiedad/${property.id}`;
     const contactMessage = `Hola, me interesa la propiedad "${property.titulo}" (ID: ${property.id}), operación: ${operacion}.\nLink: ${propertyUrl}`;
     const contactoPath = `/contacto?mensaje=${encodeURIComponent(contactMessage)}`;
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(contactMessage)}`;
 
     return (
         <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8">
@@ -195,7 +184,7 @@ const PropertyDetail = () => {
                                 )}
 
                                 {/* Estado Badge */}
-                                <div className={`absolute top-6 right-6 px-4 py-1.5 text-sm font-jakarta font-medium border shadow-lg z-10 ${getEstadoBadgeColor(property.estado)}`}>
+                                <div className={`absolute top-6 right-6 px-4 py-1.5 text-sm font-jakarta font-medium border shadow-lg z-10 ${getEstadoBadgeClasses(property.estado)}`}>
                                     {property.estado?.charAt(0).toUpperCase() + property.estado?.slice(1)}
                                 </div>
 
@@ -225,7 +214,7 @@ const PropertyDetail = () => {
                                 )}
                             </div>
 
-                            {/* Image Thumbnails Strip - In-Flow Container */}
+                            {/* Image Thumbnails Strip */}
                             {images.length > 1 && (
                                 <div className="bg-[#141416] border-t border-gold/20 p-3 px-6 flex items-center justify-center gap-3 overflow-x-auto">
                                     {images.map((img, index) => (
@@ -331,7 +320,6 @@ const PropertyDetail = () => {
                                         Ubicación
                                     </h3>
 
-                                    {/* Google Maps desactivado temporalmente */}
                                     <div className="h-[250px] bg-[#1C1C1E] rounded-lg flex items-center justify-center border border-gold/15">
                                         <div className="text-center text-slate-400">
                                             <MapPin className="h-10 w-10 mx-auto mb-2 text-gold/60" />
@@ -375,7 +363,7 @@ const PropertyDetail = () => {
                                             Contactar
                                         </Link>
                                         <a
-                                            href={whatsappUrl}
+                                            href={whatsappHref}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="w-full bg-obsidian/90 text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer text-center inline-flex items-center justify-center gap-2"

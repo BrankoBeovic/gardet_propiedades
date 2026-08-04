@@ -1,29 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { useAuth } from '../auth/AuthProvider';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [user, setUser] = useState(null);
+    const { user } = useAuth();
     const location = useLocation();
-
-    useEffect(() => {
-        // Check current session
-        const checkUser = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user || null);
-        };
-
-        checkUser();
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user || null);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
 
     const navItems = [
         { label: 'Inicio', path: '/' },
@@ -55,7 +38,7 @@ const Navbar = () => {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`transition-colors hover:text-gardet-gold ${isActive ? 'text-gardet-gold font-semibold' : ''
+                                className={`transition-colors hover:text-gold ${isActive ? 'text-gold font-semibold' : ''
                                     }`}
                             >
                                 {item.label}
@@ -68,7 +51,7 @@ const Navbar = () => {
                 <div className="flex items-center lg:hidden">
                     <button
                         onClick={() => setIsOpen(!isOpen)}
-                        className="text-slate-400 hover:text-gardet-gold transition-colors p-1"
+                        className="text-slate-400 hover:text-gold transition-colors p-1"
                         aria-label="Abrir menú"
                     >
                         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -84,7 +67,7 @@ const Navbar = () => {
                             key={item.path}
                             to={item.path}
                             onClick={() => setIsOpen(false)}
-                            className="block py-1 hover:text-gardet-gold transition-colors"
+                            className="block py-1 hover:text-gold transition-colors"
                         >
                             {item.label}
                         </Link>

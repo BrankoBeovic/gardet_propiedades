@@ -7,10 +7,15 @@ import heroVideo from '../assets/video_home_gardet.mp4';
 import quieresVenderImg from '../assets/imagen_quieres_vender.webp';
 import louisImg from '../assets/Louis_home.webp';
 import { peekPendingScroll, restoreScrollY, shouldSkipHomeEntranceAnimations } from '../utils/scrollMemory';
+import { PROPERTY_CARD_SELECT } from '../lib/propertyHelpers';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const Home = () => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [listError, setListError] = useState(null);
+
+    useDocumentMeta(null, 'GARDET Propiedades — Corredora inmobiliaria de ultra lujo en Santiago.');
 
     // When returning from property detail mid-page, show sections already revealed (no blank/entrance anim)
     const [skipEntrance] = useState(() => shouldSkipHomeEntranceAnimations());
@@ -47,24 +52,11 @@ const Home = () => {
     // Fetch properties
     useEffect(() => {
         const fetchProperties = async () => {
+            setListError(null);
             try {
                 const { data, error } = await supabase
                     .from('propiedades')
-                    .select(`
-                        *,
-                        propiedades_imagenes (
-                            url,
-                            es_portada
-                        ),
-                        tipos_propiedad (
-                            id,
-                            nombre
-                        ),
-                        tipos_operacion (
-                            id,
-                            nombre
-                        )
-                    `)
+                    .select(PROPERTY_CARD_SELECT)
                     .eq('estado', 'publicada')
                     .limit(12);
 
@@ -72,6 +64,7 @@ const Home = () => {
                 setProperties(data || []);
             } catch (error) {
                 console.error('Error fetching properties:', error.message);
+                setListError(error.message || 'No se pudieron cargar las propiedades destacadas');
             } finally {
                 setLoading(false);
             }
@@ -390,6 +383,12 @@ const Home = () => {
                     <div className="text-center py-16">
                         <div className="inline-block w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin"></div>
                         <p className="mt-4 text-ivory/40 font-jakarta text-sm">Cargando propiedades...</p>
+                    </div>
+                ) : listError ? (
+                    <div className="text-center py-16">
+                        <p className="text-red-400 font-jakarta text-sm bg-red-400/10 border border-red-400/20 rounded-lg inline-block px-4 py-3">
+                            {listError}
+                        </p>
                     </div>
                 ) : properties.length === 0 ? (
                     <div className="text-center py-16">
