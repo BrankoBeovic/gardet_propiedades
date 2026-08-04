@@ -2,7 +2,13 @@
  * Business contact placeholders — replace with real numbers when available.
  */
 export const CONTACT_EMAIL = 'contacto@gardetpropiedades.cl';
-export const CONTACT_WHATSAPP = '56912345678'; // Chile placeholder; update when real number is known
+export const CONTACT_WHATSAPP = process.env.REACT_APP_WHATSAPP_NUMBER || '56987829204';
+
+export const SOCIAL_LINKS = {
+  whatsapp: `https://wa.me/${CONTACT_WHATSAPP}`,
+  instagram: 'https://www.instagram.com/gardetpropiedades/',
+  youtube: 'https://www.youtube.com/channel/UCdcvTTX7Y2VDOON6ZlhgEWA',
+};
 
 export const CONTACT_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Consulta GARDET Propiedades')}`;
 export const CONTACT_WHATSAPP_URL = `https://wa.me/${CONTACT_WHATSAPP}`;

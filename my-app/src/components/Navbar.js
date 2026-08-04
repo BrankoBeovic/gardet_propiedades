@@ -2,14 +2,31 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
+import { useUfValue } from '../hooks/useUfValue';
+
+/**
+ * Compact UF label for the navbar (desktop + mobile). Hidden while loading or on error.
+ */
+function UfChip({ valorFormatted }) {
+    if (!valorFormatted) return null;
+
+    return (
+        <span
+            className="text-[11px] font-mono tracking-wider text-ivory/60 whitespace-nowrap"
+            title="Valor UF del día"
+        >
+            <span className="text-gold">UF</span> {valorFormatted}
+        </span>
+    );
+}
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const { user } = useAuth();
     const location = useLocation();
+    const { valorFormatted } = useUfValue();
 
     const navItems = [
-        { label: 'Inicio', path: '/' },
         { label: 'Venta', path: '/venta' },
         { label: 'Arriendo', path: '/arriendo' },
         { label: 'Sobre Nosotros', path: '/sobre-nosotros' },
@@ -19,8 +36,8 @@ const Navbar = () => {
 
     return (
         <header className="sticky top-0 z-50 bg-gardet-obsidian/90 backdrop-blur-md border-b border-gardet-border px-6 py-4 transition-all">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-                {/* Brand Logo / Text */}
+            <div className="relative max-w-7xl mx-auto flex items-center justify-between">
+                {/* Brand — left */}
                 <Link to="/" className="flex items-center space-x-3 group">
                     <span className="text-ivory font-extrabold text-lg tracking-widest uppercase transition-opacity group-hover:opacity-90">
                         GARDET
@@ -30,7 +47,12 @@ const Navbar = () => {
                     </span>
                 </Link>
 
-                {/* Desktop Navigation */}
+                {/* UF — horizontally centered in the header bar (desktop only) */}
+                <div className="absolute left-1/2 -translate-x-1/2 hidden lg:flex pointer-events-none">
+                    <UfChip valorFormatted={valorFormatted} />
+                </div>
+
+                {/* Desktop Navigation — right */}
                 <nav className="hidden lg:flex space-x-8 text-xs font-mono tracking-wider uppercase text-slate-400">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path;
@@ -47,8 +69,9 @@ const Navbar = () => {
                     })}
                 </nav>
 
-                {/* Mobile Trigger */}
-                <div className="flex items-center lg:hidden">
+                {/* Mobile: UF + hamburger on the same row */}
+                <div className="flex items-center gap-3 lg:hidden">
+                    <UfChip valorFormatted={valorFormatted} />
                     <button
                         onClick={() => setIsOpen(!isOpen)}
                         className="text-slate-400 hover:text-gold transition-colors p-1"

@@ -10,6 +10,45 @@ import { peekPendingScroll, restoreScrollY, shouldSkipHomeEntranceAnimations } f
 import { PROPERTY_CARD_SELECT } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
+const ABOUT_ESSENCE_LABEL = 'NUESTRA ESENCIA';
+const ABOUT_HEADLINE = 'SOMOS UNA CORREDORA BOUTIQUE ESPECIALIZADA EN LA COMERCIALIZACIÓN DE VIVIENDAS EXCLUSIVAS.';
+
+const ABOUT_PARAGRAPHS = [
+    {
+        withStrong: true,
+        text: 'Somos una corredora especializada en la comercialización de viviendas exclusivas en las mejores zonas de nuestro país.',
+        strong: 'viviendas exclusivas',
+    },
+    {
+        text: 'Como consultora experta, la firma dispone de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario de lujo.',
+    },
+    {
+        text: 'Ofrecemos un servicio cercano y de máxima calidad, donde los clientes están siempre acompañados de un consultor especializado que asesorará y atenderá durante todo el proceso.',
+    },
+];
+
+const SELL_LABEL = 'LOS MEJORES EXPERTOS A TU DISPOSICIÓN';
+const SELL_BODY = 'Contarás con un asesor inmobiliario experto en tu zona que te acompañará durante todo el proceso de venta de tu propiedad, desde la valoración hasta acompañarte a la firma en el notario.';
+const SELL_CTA = 'SOLICITA UNA VALORACIÓN GRATUITA';
+
+function AboutParagraph({ paragraph, className, style }) {
+    if (paragraph.withStrong) {
+        const [before, after] = paragraph.text.split(paragraph.strong);
+        return (
+            <p className={className} style={style}>
+                {before}
+                <strong className="font-semibold text-[#1C1C1C]">{paragraph.strong}</strong>
+                {after}
+            </p>
+        );
+    }
+    return (
+        <p className={className} style={style}>
+            {paragraph.text}
+        </p>
+    );
+}
+
 const Home = () => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -47,7 +86,20 @@ const Home = () => {
         return animClass;
     };
 
-    const ABOUT_HEADLINE = 'GARDET PROPIEDADES ES UNA CORREDORA ESPECIALIZADA EN LA COMERCIALIZACIÓN DE VIVIENDAS EXCLUSIVAS EN LAS MEJORES ZONAS DE SANTIAGO.';
+    const renderAboutParagraph = (paragraph, index, className) => (
+        <AboutParagraph
+            key={index}
+            paragraph={paragraph}
+            className={`${className} ${revealClass(isAboutVisible, 'animate-paragraph')}`}
+            style={{ '--p-index': index + 1 }}
+        />
+    );
+
+    const sellHeadline = (
+        <>
+            ¿DESEAS VENDER O<br />ARRENDAR TU<br />PROPIEDAD?
+        </>
+    );
 
     // Fetch properties
     useEffect(() => {
@@ -224,7 +276,7 @@ const Home = () => {
 
                     {/* Subtitle */}
                     <p className="mt-6 max-w-2xl mx-auto text-ivory/90 font-jakarta text-lg sm:text-xl font-light tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-                        Propiedades de Alta Gama en las ubicaciones más exclusivas
+                        Propiedades exclusivas en las mejores ubicaciones del país.
                     </p>
 
                     {/* Search Bar */}
@@ -265,10 +317,10 @@ const Home = () => {
                 <div className="lg:hidden w-full bg-white pt-12 pb-8 px-4 sm:px-6">
                     <div className={`max-w-7xl mx-auto flex flex-col justify-end transition-none ${revealClass(isAboutVisible, 'animate-slide-from-top')}`}>
                         <p className="text-[#A1917B] text-[11px] sm:text-xs font-jakarta font-semibold tracking-[0.2em] uppercase mb-4">
-                            NUESTRA ESENCIA
+                            {ABOUT_ESSENCE_LABEL}
                         </p>
                         <h3 className="title-editorial text-2xl sm:text-3xl text-[#2C2C2C] uppercase leading-[1.25] tracking-wide">
-                            GARDET PROPIEDADES ES UNA CORREDORA ESPECIALIZADA EN LA COMERCIALIZACIÓN DE VIVIENDAS EXCLUSIVAS.
+                            {ABOUT_HEADLINE}
                         </h3>
                     </div>
                 </div>
@@ -277,12 +329,13 @@ const Home = () => {
                 <div className="lg:hidden w-full bg-[#EBE7E0] pt-8 pb-12 px-4 sm:px-6">
                     <div className={`max-w-7xl mx-auto flex flex-col justify-start transition-none ${revealClass(isAboutVisible, 'animate-slide-from-bottom')}`} style={{ animationDelay: '0.6s' }}>
                         <div className="flex flex-col space-y-6">
-                            <p className={`font-jakarta text-[15px] sm:text-base text-[#4A4A4A] leading-[1.8] font-light ${revealClass(isAboutVisible, 'animate-paragraph')}`} style={{ '--p-index': 1 }}>
-                                Somos una corredora especializada en la comercialización de <strong className="font-semibold text-[#1C1C1C]">viviendas exclusivas</strong> en las mejores zonas de nuestro país.
-                            </p>
-                            <p className={`font-jakarta text-[15px] sm:text-base text-[#4A4A4A] leading-[1.8] font-light ${revealClass(isAboutVisible, 'animate-paragraph')}`} style={{ '--p-index': 2 }}>
-                                Ofrecemos un servicio cercano y de máxima calidad, donde los clientes están siempre acompañados de un consultor especializado que asesorará durante todo el proceso.
-                            </p>
+                            {ABOUT_PARAGRAPHS.map((paragraph, index) =>
+                                renderAboutParagraph(
+                                    paragraph,
+                                    index,
+                                    'font-jakarta text-[15px] sm:text-base text-[#4A4A4A] leading-[1.8] font-light'
+                                )
+                            )}
                         </div>
                     </div>
                 </div>
@@ -316,7 +369,7 @@ const Home = () => {
                             {/* White bg area content */}
                             <div className={`flex flex-col justify-end pb-12 pl-8 flex-1 transition-none ${revealClass(isAboutVisible, 'animate-slide-from-top')}`}>
                                 <p className="text-[#A1917B] text-[11px] sm:text-xs font-jakarta font-semibold tracking-[0.2em] uppercase mb-4">
-                                    NUESTRA ESENCIA
+                                    {ABOUT_ESSENCE_LABEL}
                                 </p>
                                 <h3 className="title-editorial text-2xl xl:text-3xl text-[#2C2C2C] uppercase leading-[1.35] tracking-wide">
                                     {!isAboutVisible ? (
@@ -324,13 +377,13 @@ const Home = () => {
                                     ) : skipEntrance ? (
                                         ABOUT_HEADLINE
                                     ) : (
-                                        ABOUT_HEADLINE.split(' ').map((word, i) => (
+                                        ABOUT_HEADLINE.split(' ').map((word, i, words) => (
                                             <span
                                                 key={i}
-                                                className="inline-block animate-split-word mr-[0.25em]"
+                                                className="inline-block animate-split-word"
                                                 style={{ '--word-index': i }}
                                             >
-                                                {word}
+                                                {word}{i < words.length - 1 ? '\u00A0' : ''}
                                             </span>
                                         ))
                                     )}
@@ -340,18 +393,13 @@ const Home = () => {
                             {/* Beige bg area content */}
                             <div className={`flex flex-col justify-start pt-12 pl-8 flex-1 transition-none ${revealClass(isAboutVisible, 'animate-slide-from-bottom')}`} style={{ animationDelay: '0.6s' }}>
                                 <div className="flex flex-col space-y-6">
-                                    <p className={`font-jakarta text-[14px] xl:text-[15px] text-[#4A4A4A] leading-[1.8] font-light max-w-[480px] ${revealClass(isAboutVisible, 'animate-paragraph')
-                                        }`} style={{ '--p-index': 1 }}>
-                                        Somos una corredora especializada en la comercialización de <strong className="font-semibold text-[#1C1C1C]">viviendas exclusivas</strong> en las mejores zonas de nuestro país.
-                                    </p>
-                                    <p className={`font-jakarta text-[14px] xl:text-[15px] text-[#4A4A4A] leading-[1.8] font-light max-w-[480px] ${revealClass(isAboutVisible, 'animate-paragraph')
-                                        }`} style={{ '--p-index': 2 }}>
-                                        Como consultora experta, la firma dispone de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario de lujo.
-                                    </p>
-                                    <p className={`font-jakarta text-[14px] xl:text-[15px] text-[#4A4A4A] leading-[1.8] font-light max-w-[480px] ${revealClass(isAboutVisible, 'animate-paragraph')
-                                        }`} style={{ '--p-index': 3 }}>
-                                        Ofrecemos un servicio cercano y de máxima calidad, donde los clientes están siempre acompañados de un consultor especializado que asesorará y atenderá durante todo el proceso.
-                                    </p>
+                                    {ABOUT_PARAGRAPHS.map((paragraph, index) =>
+                                        renderAboutParagraph(
+                                            paragraph,
+                                            index,
+                                            'font-jakarta text-[14px] xl:text-[15px] text-[#4A4A4A] leading-[1.8] font-light max-w-[480px]'
+                                        )
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -445,10 +493,10 @@ const Home = () => {
                 <div className="lg:hidden w-full bg-white pt-16 pb-8 px-4 sm:px-6">
                     <div className={`max-w-7xl mx-auto flex flex-col justify-end transition-none ${revealClass(isSellVisible, 'animate-slide-from-top')}`}>
                         <p className="text-[#A1917B] text-[11px] sm:text-xs font-jakarta font-semibold tracking-[0.2em] uppercase mb-4">
-                            LOS MEJORES EXPERTOS A TU DISPOSICIÓN
+                            {SELL_LABEL}
                         </p>
                         <h3 className="title-editorial text-3xl sm:text-4xl text-[#2C2C2C] uppercase leading-[1.15] tracking-wide">
-                            ¿DESEAS VENDER O<br />ARRENDAR TU<br />PROPIEDAD?
+                            {sellHeadline}
                         </h3>
                     </div>
                 </div>
@@ -458,12 +506,12 @@ const Home = () => {
                     <div className={`max-w-7xl mx-auto flex flex-col justify-start transition-none ${revealClass(isSellVisible, 'animate-slide-from-bottom')}`} style={{ animationDelay: '0.6s' }}>
                         <p className={`font-jakarta text-[15px] sm:text-base text-[#4A4A4A] leading-[1.8] font-light max-w-md mb-8 ${revealClass(isSellVisible, 'animate-paragraph')
                             }`} style={{ '--p-index': 1 }}>
-                            Contarás con un asesor inmobiliario experto en tu zona que te acompañará durante todo el proceso de venta de tu propiedad, desde la valoración hasta acompañarte a la firma en el notario.
+                            {SELL_BODY}
                         </p>
                         <div>
                             <Link to="/contacto" className={`inline-block text-[#5B6D7A] font-jakarta font-semibold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase pb-1 border-b border-[#5B6D7A]/50 hover:text-[#7E6649] hover:border-[#7E6649] transition-all duration-300 ${revealClass(isSellVisible, 'animate-paragraph')
                                 }`} style={{ '--p-index': 2 }}>
-                                SOLICITA UNA VALORACIÓN GRATUITA
+                                {SELL_CTA}
                             </Link>
                         </div>
                     </div>
@@ -489,10 +537,10 @@ const Home = () => {
                             {/* White bg area content */}
                             <div className={`flex flex-col justify-end pb-12 pr-8 flex-1 transition-none ${revealClass(isSellVisible, 'animate-slide-from-top')}`}>
                                 <p className="text-[#A1917B] text-[11px] sm:text-xs font-jakarta font-semibold tracking-[0.2em] uppercase mb-4">
-                                    LOS MEJORES EXPERTOS A TU DISPOSICIÓN
+                                    {SELL_LABEL}
                                 </p>
                                 <h3 className="title-editorial text-4xl lg:text-[42px] xl:text-[46px] text-[#2C2C2C] uppercase leading-[1.1] tracking-wide">
-                                    ¿DESEAS VENDER O<br />ARRENDAR TU<br />PROPIEDAD?
+                                    {sellHeadline}
                                 </h3>
                             </div>
 
@@ -500,12 +548,12 @@ const Home = () => {
                             <div className={`flex flex-col justify-start pt-12 pr-8 flex-1 transition-none ${revealClass(isSellVisible, 'animate-slide-from-bottom')}`} style={{ animationDelay: '0.6s' }}>
                                 <p className={`font-jakarta text-base text-[#4A4A4A] leading-[1.8] font-light max-w-[440px] mb-10 ${revealClass(isSellVisible, 'animate-paragraph')
                                     }`} style={{ '--p-index': 1 }}>
-                                    Contarás con un asesor inmobiliario experto en tu zona que te acompañará durante todo el proceso de venta de tu propiedad, desde la valoración hasta acompañarte a la firma en el notario.
+                                    {SELL_BODY}
                                 </p>
                                 <div>
                                     <Link to="/contacto" className={`inline-block text-[#5B6D7A] font-jakarta font-semibold text-[13px] tracking-[0.15em] uppercase pb-1 border-b-2 border-[#5B6D7A]/40 hover:text-[#7E6649] hover:border-[#7E6649] transition-all duration-300 ${revealClass(isSellVisible, 'animate-paragraph')
                                         }`} style={{ '--p-index': 2 }}>
-                                        SOLICITA UNA VALORACIÓN GRATUITA
+                                        {SELL_CTA}
                                     </Link>
                                 </div>
                             </div>

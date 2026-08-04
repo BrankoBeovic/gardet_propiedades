@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { submitContacto } from '../services/contactService';
 import sobreNosotrosImg from '../assets/Sobrenosotros.webp';
-import quienesSomosImg from '../assets/Quienessomos_home.webp';
+import sobreNosotrosImg2 from '../assets/sobrenosotros2.webp';
 
 const VALUES = [
     {
@@ -182,7 +182,7 @@ const SobreNosotros = () => {
                         </div>
                         <div className="lg:col-span-8">
                             <p className={`font-jakarta text-[15px] sm:text-base lg:text-[17px] text-[#4A4A4A] leading-[1.9] font-light ${missionVisible ? 'sn-rise' : 'opacity-0'}`} style={{ '--sn-delay': 200 }}>
-                                El verdadero éxito en el sector inmobiliario de alto valor se basa en la experiencia, la confianza y las relaciones duraderas. Nuestra misión es atraer y desarrollar talento excepcional, impulsar la innovación constante y entregar un servicio de clase mundial, manteniéndonos siempre fieles a nuestro compromiso con la excelencia, la integridad y el trabajo en equipo.
+                                El verdadero éxito en el sector inmobiliario boutique se basa en la experiencia, la confianza y las relaciones duraderas. Nuestra misión es atraer y desarrollar talento excepcional, impulsar la innovación constante y entregar un servicio de clase mundial, manteniéndonos siempre fieles a nuestro compromiso con la excelencia, la integridad y el trabajo en equipo.
                             </p>
                         </div>
                     </div>
@@ -233,14 +233,14 @@ const SobreNosotros = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
                         <div className={`${formVisible ? 'sn-rise' : 'opacity-0'}`} style={{ '--sn-delay': 60 }}>
                             <h2 className="title-editorial text-[#1C1C1C] text-2xl sm:text-[28px] leading-[1.35] tracking-wide mb-5">
-                                Contacta con Gardet Propiedades para saber más sobre nuestros productos y servicios
+                                Contacta con nosotros para saber más sobre nuestros productos y servicios
                             </h2>
                             <p className="font-jakarta text-[15px] text-[#4A4A4A] leading-[1.75] font-light max-w-md mb-8">
                                 Completa este formulario y uno de nuestros agentes se pondrá en contacto contigo lo antes posible
                             </p>
                             <div className="w-full aspect-[4/5] max-w-md overflow-hidden">
                                 <img
-                                    src={quienesSomosImg}
+                                    src={sobreNosotrosImg2}
                                     alt="Gardet Propiedades"
                                     className="w-full h-full object-cover object-center"
                                 />

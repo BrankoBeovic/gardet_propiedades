@@ -21,11 +21,14 @@ import { useAuth } from '../auth/AuthProvider';
 import { PROPERTY_DETAIL_SELECT, getEstadoBadgeClasses } from '../lib/propertyHelpers';
 import { propertyInquiryWhatsApp } from '../constants/contact';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { useUfValue } from '../hooks/useUfValue';
+import { formatClp } from '../services/ufService';
 
 const PropertyDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { valor: ufValor } = useUfValue();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState(null);
@@ -142,6 +145,14 @@ const PropertyDetail = () => {
     const contactMessage = `Hola, me interesa la propiedad "${property.titulo}" (ID: ${property.id}), operación: ${operacion}.\nLink: ${propertyUrl}`;
     const contactoPath = `/contacto?mensaje=${encodeURIComponent(contactMessage)}`;
 
+    const precioClp =
+        typeof property.precio_uf === 'number' &&
+        typeof ufValor === 'number' &&
+        !Number.isNaN(property.precio_uf) &&
+        !Number.isNaN(ufValor)
+            ? formatClp(Math.round(property.precio_uf * ufValor))
+            : null;
+
     return (
         <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
@@ -254,11 +265,18 @@ const PropertyDetail = () => {
                                             <span className="font-jakarta text-sm break-words">{property.direccion_referencial}</span>
                                         </div>
                                     </div>
-                                    <div className="bg-gold text-obsidian px-6 py-4 flex-shrink-0 shadow-lg">
-                                        <div className="text-xs font-jakarta font-bold uppercase tracking-wider text-obsidian/80">Precio</div>
-                                        <div className="text-2xl font-ysabeau font-bold">
-                                            UF {property.precio_uf?.toLocaleString()}
+                                    <div className="flex-shrink-0">
+                                        <div className="bg-gold text-obsidian px-6 py-4 shadow-lg">
+                                            <div className="text-xs font-jakarta font-bold uppercase tracking-wider text-obsidian/80">Precio</div>
+                                            <div className="text-2xl font-ysabeau font-bold">
+                                                UF {property.precio_uf?.toLocaleString()}
+                                            </div>
                                         </div>
+                                        {precioClp && (
+                                            <p className="mt-1.5 text-xs text-slate-400 font-jakarta tracking-wide text-right">
+                                                {precioClp}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
