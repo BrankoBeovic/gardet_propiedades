@@ -43,6 +43,15 @@ const SELL_LABEL = 'LOS MEJORES EXPERTOS A TU DISPOSICIÓN';
 const SELL_BODY = 'Contarás con un asesor inmobiliario experto en tu zona que te acompañará durante todo el proceso de venta de tu propiedad, desde la valoración hasta acompañarte a la firma en el notario.';
 const SELL_CTA = 'SOLICITA UNA VALORACIÓN GRATUITA';
 
+// Marquee motion constants (module-level so hooks exhaustive-deps stays clean in CI)
+const SPEED_NORMAL = 0.35;
+const SPEED_FAST = 1.8;
+const SPEED_PAUSED = 0;
+const LERP_FACTOR = 0.04; // Smooth interpolation factor (lower = smoother transition)
+const DRAG_CLICK_THRESHOLD = 8; // px — below this, treat as tap so Ver Detalles still works
+const FRAME_MS = 1000 / 60; // Baseline frame time for frame-rate-independent motion
+const MAX_FLICK_SPEED = 45; // Cap released momentum (px/frame) so hard flicks stay controlled
+
 function AboutParagraph({ paragraph, className, style }) {
     if (paragraph.withStrong) {
         const [before, after] = paragraph.text.split(paragraph.strong);
@@ -96,14 +105,6 @@ const Home = () => {
     const lastMoveTimeRef = useRef(0);   // Timestamp of last pointer move (for velocity)
     const lastFrameTimeRef = useRef(0);  // Timestamp of last RAF frame (for dt normalization)
     const [isDragging, setIsDragging] = useState(false);
-
-    const SPEED_NORMAL = 0.35;
-    const SPEED_FAST = 1.8;
-    const SPEED_PAUSED = 0;
-    const LERP_FACTOR = 0.04; // Smooth interpolation factor (lower = smoother transition)
-    const DRAG_CLICK_THRESHOLD = 8; // px — below this, treat as tap so Ver Detalles still works
-    const FRAME_MS = 1000 / 60; // Baseline frame time for frame-rate-independent motion
-    const MAX_FLICK_SPEED = 45; // Cap released momentum (px/frame) so hard flicks stay controlled
 
     /** Wrap offset every 1/3 of track width for seamless loop. */
     const wrapOffset = useCallback(() => {
