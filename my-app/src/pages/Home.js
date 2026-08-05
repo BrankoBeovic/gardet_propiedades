@@ -10,7 +10,6 @@ import { PROPERTY_CARD_SELECT } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const HERO_POSTER = '/media/hero-v1-poster.webp';
-const HERO_VIDEO_720 = '/media/hero-v1-720.mp4';
 const HERO_VIDEO_1080 = '/media/hero-v1-1080.mp4';
 const HERO_VIDEO_WEBM = '/media/hero-v1-1080.webm';
 
@@ -27,9 +26,7 @@ const ABOUT_HEADLINE = 'SOMOS UNA CORREDORA BOUTIQUE ESPECIALIZADA EN LA COMERCI
 
 const ABOUT_PARAGRAPHS = [
     {
-        withStrong: true,
         text: 'Somos una corredora especializada en la comercialización de viviendas exclusivas en las mejores zonas de nuestro país.',
-        strong: 'viviendas exclusivas',
     },
     {
         text: 'Como consultora experta, la firma dispone de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario.',
@@ -409,9 +406,7 @@ const Home = () => {
                             heroVideoReady ? 'opacity-100' : 'opacity-0'
                         }`}
                     >
-                        <source src={HERO_VIDEO_720} type="video/mp4" media="(max-width: 767px)" />
-                        <source src={HERO_VIDEO_WEBM} type="video/webm" media="(min-width: 768px)" />
-                        <source src={HERO_VIDEO_1080} type="video/mp4" media="(min-width: 768px)" />
+                        <source src={HERO_VIDEO_WEBM} type="video/webm" />
                         <source src={HERO_VIDEO_1080} type="video/mp4" />
                     </video>
                 )}
