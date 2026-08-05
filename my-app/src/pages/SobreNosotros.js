@@ -18,7 +18,7 @@ const VALUES = [
     },
     {
         title: 'Ideas Frescas y Audaces',
-        body: 'Nos mueve la innovación. Combinamos una visión global con un profundo dominio del mercado local para transformar la manera de hacer negocios en el segmento de lujo.',
+        body: 'Nos mueve la innovación. Combinamos una visión global con un profundo dominio del mercado local para transformar la manera de hacer negocios en el segmento de alto estándar.',
     },
     {
         title: 'Empoderamiento de las Personas',
@@ -159,7 +159,7 @@ const SobreNosotros = () => {
                     </h2>
                     <div className={`mx-auto h-px w-16 bg-gold/70 mb-8 ${essenceVisible ? 'sn-line' : 'opacity-0'}`} style={{ '--sn-delay': 200 }} />
                     <p className={`font-jakarta text-[15px] sm:text-base text-[#4A4A4A] leading-[1.85] font-light mb-6 ${essenceVisible ? 'sn-rise' : 'opacity-0'}`} style={{ '--sn-delay': 260 }}>
-                        Disponemos de una cuidada y rigurosa cartera de propiedades, respaldada por un equipo comercial altamente cualificado y con una sólida trayectoria en el sector inmobiliario de lujo.
+                        Disponemos de una cuidada y rigurosa cartera de propiedades, respaldada por un equipo comercial altamente cualificado y con una sólida trayectoria en el sector inmobiliario.
                     </p>
                     <p className={`font-jakarta text-[15px] sm:text-base text-[#4A4A4A] leading-[1.85] font-light ${essenceVisible ? 'sn-rise' : 'opacity-0'}`} style={{ '--sn-delay': 360 }}>
                         Creemos que una propiedad extraordinaria requiere un servicio a su misma altura. Por ello, ofrecemos una atención cercana, personalizada y de máxima calidad: cada cliente cuenta con el acompañamiento constante de un consultor especializado que le asesorará con discreción, rigor y dedicación en cada etapa del proceso.

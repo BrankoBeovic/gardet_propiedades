@@ -3,12 +3,24 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
 import HeroSearch from '../components/HeroSearch';
-import heroVideo from '../assets/video_home_gardet.mp4';
 import quieresVenderImg from '../assets/imagen_quieres_vender.webp';
 import louisImg from '../assets/Louis_home.webp';
 import { peekPendingScroll, restoreScrollY, shouldSkipHomeEntranceAnimations } from '../utils/scrollMemory';
 import { PROPERTY_CARD_SELECT } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
+
+const HERO_POSTER = '/media/hero-v1-poster.webp';
+const HERO_VIDEO_720 = '/media/hero-v1-720.mp4';
+const HERO_VIDEO_1080 = '/media/hero-v1-1080.mp4';
+const HERO_VIDEO_WEBM = '/media/hero-v1-1080.webm';
+
+/** Prefer poster-only when the user wants less motion or Save-Data is on. */
+function shouldPreferHeroPosterOnly() {
+    if (typeof window === 'undefined') return false;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const saveData = Boolean(navigator.connection?.saveData);
+    return prefersReducedMotion || saveData;
+}
 
 const ABOUT_ESSENCE_LABEL = 'NUESTRA ESENCIA';
 const ABOUT_HEADLINE = 'SOMOS UNA CORREDORA BOUTIQUE ESPECIALIZADA EN LA COMERCIALIZACIÓN DE VIVIENDAS EXCLUSIVAS.';
@@ -20,7 +32,7 @@ const ABOUT_PARAGRAPHS = [
         strong: 'viviendas exclusivas',
     },
     {
-        text: 'Como consultora experta, la firma dispone de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario de lujo.',
+        text: 'Como consultora experta, la firma dispone de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario.',
     },
     {
         text: 'Ofrecemos un servicio cercano y de máxima calidad, donde los clientes están siempre acompañados de un consultor especializado que asesorará y atenderá durante todo el proceso.',
@@ -53,6 +65,8 @@ const Home = () => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
     const [listError, setListError] = useState(null);
+    const [preferPosterOnly] = useState(() => shouldPreferHeroPosterOnly());
+    const [heroVideoReady, setHeroVideoReady] = useState(false);
 
     useDocumentMeta(null, 'GARDET Propiedades — Corredora inmobiliaria de ultra lujo en Santiago.');
 
@@ -69,15 +83,46 @@ const Home = () => {
 
     // Marquee animation state managed via refs for smooth RAF loop
     const trackRef = useRef(null);
+    const trackContainerRef = useRef(null);
     const offsetRef = useRef(0);
     const targetSpeedRef = useRef(0.35);  // Normal slow speed (px per frame)
     const currentSpeedRef = useRef(0.35);
     const rafRef = useRef(null);
+    const isDraggingRef = useRef(false);
+    const lastXRef = useRef(0);
+    const dragMovedRef = useRef(false);
+    const dragDistanceRef = useRef(0);
+    const velocityRef = useRef(0);       // Smoothed pointer velocity (offset px per ms)
+    const lastMoveTimeRef = useRef(0);   // Timestamp of last pointer move (for velocity)
+    const lastFrameTimeRef = useRef(0);  // Timestamp of last RAF frame (for dt normalization)
+    const [isDragging, setIsDragging] = useState(false);
 
     const SPEED_NORMAL = 0.35;
     const SPEED_FAST = 1.8;
     const SPEED_PAUSED = 0;
     const LERP_FACTOR = 0.04; // Smooth interpolation factor (lower = smoother transition)
+    const DRAG_CLICK_THRESHOLD = 8; // px — below this, treat as tap so Ver Detalles still works
+    const FRAME_MS = 1000 / 60; // Baseline frame time for frame-rate-independent motion
+    const MAX_FLICK_SPEED = 45; // Cap released momentum (px/frame) so hard flicks stay controlled
+
+    /** Wrap offset every 1/3 of track width for seamless loop. */
+    const wrapOffset = useCallback(() => {
+        if (!trackRef.current) return;
+        const segmentWidth = trackRef.current.scrollWidth / 3;
+        if (segmentWidth <= 0) return;
+        while (offsetRef.current >= segmentWidth) {
+            offsetRef.current -= segmentWidth;
+        }
+        while (offsetRef.current < 0) {
+            offsetRef.current += segmentWidth;
+        }
+    }, []);
+
+    /** Apply current offset to the track transform. */
+    const applyTrackTransform = useCallback(() => {
+        if (!trackRef.current) return;
+        trackRef.current.style.transform = `translateX(-${offsetRef.current}px)`;
+    }, []);
 
     // Visible instantly when returning from detail; otherwise play entrance anim
     const revealClass = (visible, animClass) => {
@@ -196,36 +241,38 @@ const Home = () => {
         };
     }, [skipEntrance]);
 
-    // Smooth RAF animation loop
-    const animate = useCallback(() => {
-        // Smoothly interpolate current speed toward target speed
-        currentSpeedRef.current += (targetSpeedRef.current - currentSpeedRef.current) * LERP_FACTOR;
+    // Smooth RAF animation loop (time-based so speed is consistent across refresh rates)
+    const animate = useCallback((now) => {
+        const last = lastFrameTimeRef.current || now;
+        // Clamp dt so returning from a background tab doesn't cause a big jump
+        const dt = Math.min(now - last, 50);
+        lastFrameTimeRef.current = now;
+        const frameFactor = dt / FRAME_MS;
 
-        // Round to avoid floating point drift when paused
-        if (Math.abs(currentSpeedRef.current) < 0.001) {
-            currentSpeedRef.current = 0;
+        // Ease current speed toward target. After a flick, currentSpeed is seeded
+        // with the release velocity and this lerp glides it back to SPEED_NORMAL,
+        // giving momentum + a smooth resume without any abrupt snap-back.
+        currentSpeedRef.current += (targetSpeedRef.current - currentSpeedRef.current) * LERP_FACTOR * frameFactor;
+
+        // Settle onto the target once close enough (avoids floating point drift)
+        if (Math.abs(currentSpeedRef.current - targetSpeedRef.current) < 0.001) {
+            currentSpeedRef.current = targetSpeedRef.current;
         }
 
-        offsetRef.current += currentSpeedRef.current;
-
-        // Reset offset when 1/3 of the track has scrolled (seamless loop)
-        if (trackRef.current) {
-            const halfWidth = trackRef.current.scrollWidth / 3;
-            if (offsetRef.current >= halfWidth) {
-                offsetRef.current -= halfWidth;
-            }
-        }
-
-        if (trackRef.current) {
-            trackRef.current.style.transform = `translateX(-${offsetRef.current}px)`;
+        // During pointer drag, offset is written 1:1 by the pointer handler
+        if (!isDraggingRef.current) {
+            offsetRef.current += currentSpeedRef.current * frameFactor;
+            wrapOffset();
+            applyTrackTransform();
         }
 
         rafRef.current = requestAnimationFrame(animate);
-    }, []);
+    }, [wrapOffset, applyTrackTransform]);
 
     // Start/stop animation loop
     useEffect(() => {
         if (!loading && properties.length > 0) {
+            lastFrameTimeRef.current = 0; // reset so first frame's dt is 0
             rafRef.current = requestAnimationFrame(animate);
         }
         return () => {
@@ -234,6 +281,99 @@ const Home = () => {
             }
         };
     }, [loading, properties.length, animate]);
+
+    /** Pause auto-scroll and start tracking a potential drag. */
+    const handleMarqueePointerDown = (e) => {
+        // Only primary button / touch / pen
+        if (e.button != null && e.button !== 0) return;
+
+        isDraggingRef.current = true;
+        dragMovedRef.current = false;
+        dragDistanceRef.current = 0;
+        lastXRef.current = e.clientX;
+        lastMoveTimeRef.current = performance.now();
+        velocityRef.current = 0;
+        // Freeze motion instantly under the finger (no residual glide while held)
+        targetSpeedRef.current = SPEED_PAUSED;
+        currentSpeedRef.current = SPEED_PAUSED;
+        setIsDragging(true);
+        // Delay setPointerCapture until past tap threshold so Ver Detalles clicks still work
+    };
+
+    /** Move track by pointer delta while dragging (1:1) and track release velocity. */
+    const handleMarqueePointerMove = (e) => {
+        if (!isDraggingRef.current) return;
+
+        const now = performance.now();
+        const deltaX = e.clientX - lastXRef.current;
+        const dt = now - lastMoveTimeRef.current;
+        lastXRef.current = e.clientX;
+        lastMoveTimeRef.current = now;
+
+        if (deltaX === 0) return;
+
+        dragDistanceRef.current += Math.abs(deltaX);
+
+        if (dragDistanceRef.current >= DRAG_CLICK_THRESHOLD && !dragMovedRef.current) {
+            dragMovedRef.current = true;
+            // Capture only once it's a real swipe — keeps taps on Ver Detalles intact
+            try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+            } catch {
+                // ignore if capture fails (e.g. pointer already released)
+            }
+        }
+
+        // Finger moves right → content moves right (offset decreases)
+        const offsetDelta = -deltaX;
+        offsetRef.current += offsetDelta;
+
+        // Smooth the instantaneous velocity (offset px per ms) to feed momentum on release
+        if (dt > 0) {
+            const instant = offsetDelta / dt;
+            velocityRef.current = velocityRef.current * 0.8 + instant * 0.2;
+        }
+
+        // Write the transform immediately so the drag stays perfectly 1:1 (no RAF lag)
+        wrapOffset();
+        applyTrackTransform();
+    };
+
+    /** End drag; suppress click if swiped; carry momentum then ease back to SPEED_NORMAL. */
+    const handleMarqueePointerUp = (e) => {
+        if (!isDraggingRef.current) return;
+
+        isDraggingRef.current = false;
+        setIsDragging(false);
+
+        if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+
+        // If the user dragged past the tap threshold, suppress the following synthetic click
+        // so Ver Detalles does not navigate after a swipe.
+        if (dragMovedRef.current) {
+            const suppressClick = (clickEvent) => {
+                clickEvent.preventDefault();
+                clickEvent.stopPropagation();
+            };
+            const container = trackContainerRef.current;
+            if (container) {
+                container.addEventListener('click', suppressClick, { capture: true, once: true });
+                // Safety: drop listener if no click follows (e.g. released off interactive target)
+                window.setTimeout(() => {
+                    container.removeEventListener('click', suppressClick, { capture: true });
+                }, 400);
+            }
+        }
+
+        // Seed the loop with the release velocity (px/ms → px/frame) so the flick
+        // keeps gliding, then let the RAF lerp ease it smoothly back to SPEED_NORMAL.
+        const releaseSpeed = velocityRef.current * FRAME_MS;
+        currentSpeedRef.current = Math.max(-MAX_FLICK_SPEED, Math.min(MAX_FLICK_SPEED, releaseSpeed));
+        velocityRef.current = 0;
+        targetSpeedRef.current = SPEED_NORMAL;
+    };
 
     // Duplicate properties array to create a seamless infinite perpetual loop
     const displayProperties = properties.length > 0
@@ -244,16 +384,36 @@ const Home = () => {
         <div className="min-h-screen">
             {/* Hero Section */}
             <div className="relative pt-20 overflow-hidden min-h-[88vh] sm:min-h-[820px] flex flex-col items-center justify-start bg-[#141414] z-10">
-                {/* Background Loop Video - 100% original colors */}
-                <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover opacity-100 pointer-events-none z-0"
-                >
-                    <source src={heroVideo} type="video/mp4" />
-                </video>
+                {/* Poster always paints first; video fades in when ready (or poster-only for reduced-motion / Save-Data) */}
+                <img
+                    src={HERO_POSTER}
+                    alt=""
+                    aria-hidden="true"
+                    fetchPriority="high"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+                />
+                {!preferPosterOnly && (
+                    <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload="metadata"
+                        poster={HERO_POSTER}
+                        aria-hidden="true"
+                        onCanPlay={() => setHeroVideoReady(true)}
+                        onPlaying={() => setHeroVideoReady(true)}
+                        className={`absolute inset-0 w-full h-full object-cover pointer-events-none z-[1] transition-opacity duration-700 ease-out ${
+                            heroVideoReady ? 'opacity-100' : 'opacity-0'
+                        }`}
+                    >
+                        <source src={HERO_VIDEO_720} type="video/mp4" media="(max-width: 767px)" />
+                        <source src={HERO_VIDEO_WEBM} type="video/webm" media="(min-width: 768px)" />
+                        <source src={HERO_VIDEO_1080} type="video/mp4" media="(min-width: 768px)" />
+                        <source src={HERO_VIDEO_1080} type="video/mp4" />
+                    </video>
+                )}
 
                 {/* Top fade gradient for smooth navbar transition */}
                 <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#141414] via-[#141414]/70 to-transparent pointer-events-none z-10" />
@@ -346,6 +506,8 @@ const Home = () => {
                         <img
                             src={louisImg}
                             alt="Gardet Propiedades - Sobre Nosotros"
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover shadow-[0_20px_50px_rgba(0,0,0,0.1)] object-center rounded-sm"
                         />
                     </div>
@@ -360,6 +522,8 @@ const Home = () => {
                             <img
                                 src={louisImg}
                                 alt="Gardet Propiedades - Sobre Nosotros"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover shadow-[0_20px_50px_rgba(0,0,0,0.1)] object-center rounded-sm"
                             />
                         </div>
@@ -444,17 +608,29 @@ const Home = () => {
                     </div>
                 ) : (
                     /* Perpetual Continuous Showroom Track Container */
-                    <div className="w-full overflow-hidden py-4 relative">
-                        {/* Side Edge Acceleration Trigger Zones — narrow strips at page edges */}
+                    <div
+                        ref={trackContainerRef}
+                        className={`w-full overflow-hidden py-4 relative touch-pan-y select-none ${
+                            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+                        }`}
+                        style={{ touchAction: 'pan-y' }}
+                        onPointerDown={handleMarqueePointerDown}
+                        onPointerMove={handleMarqueePointerMove}
+                        onPointerUp={handleMarqueePointerUp}
+                        onPointerCancel={handleMarqueePointerUp}
+                    >
+                        {/* Side Edge Acceleration — desktop only so they don't block touch on mobile */}
                         <div
-                            onMouseEnter={() => { targetSpeedRef.current = SPEED_FAST; }}
-                            onMouseLeave={() => { targetSpeedRef.current = SPEED_NORMAL; }}
-                            className="absolute left-0 top-0 bottom-0 w-16 sm:w-20 z-10"
+                            onMouseEnter={() => { if (!isDraggingRef.current) targetSpeedRef.current = SPEED_FAST; }}
+                            onMouseLeave={() => { if (!isDraggingRef.current) targetSpeedRef.current = SPEED_NORMAL; }}
+                            className="absolute left-0 top-0 bottom-0 w-16 sm:w-20 z-10 hidden lg:block"
+                            aria-hidden="true"
                         />
                         <div
-                            onMouseEnter={() => { targetSpeedRef.current = SPEED_FAST; }}
-                            onMouseLeave={() => { targetSpeedRef.current = SPEED_NORMAL; }}
-                            className="absolute right-0 top-0 bottom-0 w-16 sm:w-20 z-10"
+                            onMouseEnter={() => { if (!isDraggingRef.current) targetSpeedRef.current = SPEED_FAST; }}
+                            onMouseLeave={() => { if (!isDraggingRef.current) targetSpeedRef.current = SPEED_NORMAL; }}
+                            className="absolute right-0 top-0 bottom-0 w-16 sm:w-20 z-10 hidden lg:block"
+                            aria-hidden="true"
                         />
 
                         {/* Marquee Track */}
@@ -471,7 +647,11 @@ const Home = () => {
                                     <PropertyCard
                                         property={property}
                                         onButtonHover={() => { targetSpeedRef.current = SPEED_PAUSED; }}
-                                        onButtonLeave={() => { targetSpeedRef.current = SPEED_NORMAL; }}
+                                        onButtonLeave={() => {
+                                            if (!isDraggingRef.current) {
+                                                targetSpeedRef.current = SPEED_NORMAL;
+                                            }
+                                        }}
                                     />
                                 </div>
                             ))}
@@ -523,6 +703,8 @@ const Home = () => {
                         <img
                             src={quieresVenderImg}
                             alt="Asesor inmobiliario"
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover shadow-[0_20px_50px_rgba(0,0,0,0.1)] object-center rounded-sm"
                         />
                     </div>
@@ -564,6 +746,8 @@ const Home = () => {
                             <img
                                 src={quieresVenderImg}
                                 alt="Asesor inmobiliario"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover shadow-[0_20px_50px_rgba(0,0,0,0.1)] object-center rounded-sm"
                             />
                         </div>

@@ -71,7 +71,9 @@ const Navbar = () => {
 
                 {/* Mobile: UF + hamburger on the same row */}
                 <div className="flex items-center gap-3 lg:hidden">
-                    <UfChip valorFormatted={valorFormatted} />
+                    <span className="max-[430px]:hidden">
+                        <UfChip valorFormatted={valorFormatted} />
+                    </span>
                     <button
                         onClick={() => setIsOpen(!isOpen)}
                         className="text-slate-400 hover:text-gold transition-colors p-1"
