@@ -23,15 +23,15 @@ const Footer = () => {
         <footer className="bg-[#141416] relative z-20 border-t border-gold/20 shadow-2xl">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-5">
-                    {/* Brand */}
-                    <div className="text-center md:text-left">
-                        <h3 className="font-jakarta font-extrabold text-xl text-ivory tracking-brand">
+                    {/* Brand — same mark as navbar, links home */}
+                    <Link to="/" className="inline-flex flex-col items-center md:items-start group">
+                        <span className="text-ivory font-extrabold text-lg tracking-widest uppercase transition-opacity group-hover:opacity-90">
                             GARDET
-                        </h3>
-                        <p className="text-gold text-xs tracking-descriptor font-jakarta mt-1">
+                        </span>
+                        <span className="text-xs text-gold font-jakarta tracking-[5px] uppercase mt-1">
                             PROPIEDADES
-                        </p>
-                    </div>
+                        </span>
+                    </Link>
 
                     {/* Tagline + social */}
                     <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">

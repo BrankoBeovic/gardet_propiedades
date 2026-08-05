@@ -1,22 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { fetchPublishedLocationOptions } from '../lib/propertyHelpers';
 
 const LABEL_CLASS =
-    'block text-gold text-[10px] font-jakarta font-semibold uppercase tracking-widest mb-1.5 pl-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]';
+    'block text-gold text-[10px] font-jakarta font-semibold uppercase tracking-widest mb-1.5 pl-1';
 
-// Frosted field: translucent surface that lets the hero show through, with a soft inner sheen.
-// Options need an opaque background so the native dropdown stays readable over the glass.
+// Dark opaque fields for readable ivory text over the frosted panel.
 const FIELD_CLASS =
-    'w-full bg-white/10 border border-white/25 rounded-xl px-3 py-2.5 text-ivory font-jakarta text-sm ' +
-    'shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md ' +
-    'focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 ' +
-    'hover:bg-white/[0.16] hover:border-white/40 transition-all duration-300 ' +
+    'w-full bg-[#141416] border border-white/15 rounded-xl px-3 py-2.5 text-ivory font-jakarta text-sm ' +
+    'shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ' +
+    'focus:outline-none focus:border-gold/55 focus:ring-1 focus:ring-gold/25 ' +
+    'hover:border-white/30 transition-all duration-300 ' +
     '[&>option]:bg-[#1C1C1E] [&>option]:text-ivory';
 
-const HeroSearch = ({ className = '' }) => {
+const PANEL_BG =
+    'absolute inset-0 rounded-2xl backdrop-blur-xl bg-[#1C1C1E]/75 border border-white/20';
+
+/** Map route operationType to tipos_operacion id (Arriendo excludes temporada). */
+function resolveOperacionId(tiposOperacion, operationType) {
+    if (!operationType || tiposOperacion.length === 0) return null;
+
+    if (operationType === 'Arriendo') {
+        const match = tiposOperacion.find(
+            (op) => op.nombre.toLowerCase() === 'arriendo'
+        );
+        return match?.id ?? null;
+    }
+
+    const match = tiposOperacion.find(
+        (op) => op.nombre.toLowerCase() === operationType.toLowerCase()
+    );
+    return match?.id ?? null;
+}
+
+const HeroSearch = ({ className = '', operationType }) => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Filter state
@@ -34,19 +55,22 @@ const HeroSearch = ({ className = '' }) => {
     const [tiposPropiedad, setTiposPropiedad] = useState([]);
     const [regiones, setRegiones] = useState([]);
     const [comunas, setComunas] = useState([]);
+    // regionId → comunas with published properties (from helper)
+    const [comunasByRegion, setComunasByRegion] = useState({});
 
-    // Load dropdown data on mount
+    // Load dropdown data on mount (regiones/comunas only where published properties exist)
     useEffect(() => {
         const loadDropdowns = async () => {
             try {
-                const [opRes, tipRes, regRes] = await Promise.all([
+                const [opRes, tipRes, locOptions] = await Promise.all([
                     supabase.from('tipos_operacion').select('id, nombre'),
                     supabase.from('tipos_propiedad').select('id, nombre'),
-                    supabase.from('regiones').select('id, nombre')
+                    fetchPublishedLocationOptions(supabase),
                 ]);
                 setTiposOperacion(opRes.data || []);
                 setTiposPropiedad(tipRes.data || []);
-                setRegiones(regRes.data || []);
+                setRegiones(locOptions.regiones || []);
+                setComunasByRegion(locOptions.comunasByRegion || {});
             } catch (error) {
                 console.error('Error loading search dropdowns:', error);
             }
@@ -54,23 +78,29 @@ const HeroSearch = ({ className = '' }) => {
         loadDropdowns();
     }, []);
 
-    // Load comunas when region changes
+    // Pre-select operación from route prop or URL query (?operacion=id)
     useEffect(() => {
-        const loadComunas = async () => {
-            if (region) {
-                const { data } = await supabase
-                    .from('comunas')
-                    .select('id, nombre')
-                    .eq('region_id', region)
-                    .order('nombre');
-                setComunas(data || []);
-            } else {
-                setComunas([]);
-                setComuna('');
-            }
-        };
-        loadComunas();
-    }, [region]);
+        if (tiposOperacion.length === 0) return;
+
+        if (operationType) {
+            const id = resolveOperacionId(tiposOperacion, operationType);
+            if (id) setOperacion(String(id));
+            return;
+        }
+
+        const urlOperacion = searchParams.get('operacion');
+        if (urlOperacion) setOperacion(urlOperacion);
+    }, [operationType, tiposOperacion, searchParams]);
+
+    // Populate comunas from the published-location map when region changes
+    useEffect(() => {
+        if (region) {
+            setComunas(comunasByRegion[region] || []);
+        } else {
+            setComunas([]);
+            setComuna('');
+        }
+    }, [region, comunasByRegion]);
 
     const handleSearch = () => {
         const params = new URLSearchParams();
@@ -95,12 +125,10 @@ const HeroSearch = ({ className = '' }) => {
             className={`w-full max-w-5xl mx-auto mt-8 animate-fade-in-up [animation-fill-mode:both] ${className}`}
             style={{ animationDelay: '0.3s' }}
         >
-            {/* CONTAINER 1: Main Search Bar — frosted glass panel */}
+            {/* CONTAINER 1: Main Search Bar — dark frosted panel */}
             <div className="relative rounded-2xl overflow-hidden shadow-[0_24px_70px_-20px_rgba(0,0,0,0.75)]">
-                {/* Layered glass: blur + soft gradient + luminous edge */}
-                <div className="absolute inset-0 backdrop-blur-2xl bg-gradient-to-br from-white/[0.14] via-white/[0.07] to-white/[0.03] rounded-2xl" />
-                <div className="absolute inset-0 rounded-2xl border border-white/25 pointer-events-none" />
-                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
+                <div className={PANEL_BG} />
+                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
 
                 <div className="relative p-3.5 sm:p-4">
                     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
@@ -195,7 +223,7 @@ const HeroSearch = ({ className = '' }) => {
             <div className="flex justify-end mt-2.5">
                 <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="inline-flex items-center gap-2 backdrop-blur-xl bg-white/10 border border-white/25 hover:bg-white/[0.16] hover:border-white/40 text-gold hover:text-gold-light px-4 py-2 rounded-xl transition-all duration-300 font-jakarta text-xs font-semibold tracking-wide shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] group cursor-pointer"
+                    className="inline-flex items-center gap-2 backdrop-blur-xl bg-[#1C1C1E]/75 border border-white/20 hover:border-gold/40 text-gold hover:text-gold-light px-4 py-2 rounded-xl transition-all duration-300 font-jakarta text-xs font-semibold tracking-wide group cursor-pointer"
                 >
                     <SlidersHorizontal className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90 text-gold" />
                     <span>Búsqueda avanzada</span>
@@ -203,12 +231,11 @@ const HeroSearch = ({ className = '' }) => {
                 </button>
             </div>
 
-            {/* CONTAINER 2: Advanced Search Panel — same frosted treatment */}
+            {/* CONTAINER 2: Advanced Search Panel — same dark frosted treatment */}
             {showAdvanced && (
-                <div className="relative rounded-2xl overflow-hidden shadow-[0_24px_70px_-20px_rgba(0,0,0,0.75)] mt-3 animate-fade-in">
-                    <div className="absolute inset-0 backdrop-blur-2xl bg-gradient-to-br from-white/[0.14] via-white/[0.07] to-white/[0.03] rounded-2xl" />
-                    <div className="absolute inset-0 rounded-2xl border border-white/25 pointer-events-none" />
-                    <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
+                <div className="relative rounded-2xl overflow-hidden shadow-[0_24px_70px_-20px_rgba(0,0,0,0.75)] mt-3 animate-fade-in [animation-fill-mode:both]">
+                    <div className={PANEL_BG} />
+                    <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
 
                     <div className="relative p-4 sm:p-5">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

@@ -100,3 +100,64 @@ export async function fetchComunasByRegion(supabase, regionId) {
   if (error) throw error;
   return data || [];
 }
+
+/**
+ * Derives regiones and comunas that have at least one published property.
+ * Used by HeroSearch so filters only show locations with results.
+ * @returns {{ regiones: Array<{id: string|number, nombre: string}>, comunasByRegion: Record<string, Array<{id: string|number, nombre: string}>> }}
+ */
+export async function fetchPublishedLocationOptions(supabase) {
+  const { data, error } = await supabase
+    .from('propiedades')
+    .select(`
+      comuna_id,
+      comunas (
+        id,
+        nombre,
+        region_id,
+        regiones (
+          id,
+          nombre
+        )
+      )
+    `)
+    .eq('estado', 'publicada');
+
+  if (error) throw error;
+
+  const regionesMap = new Map();
+  const comunasMaps = new Map();
+
+  for (const prop of data || []) {
+    const comuna = prop.comunas;
+    if (!comuna?.regiones) continue;
+
+    const region = comuna.regiones;
+    const regionKey = String(region.id);
+
+    if (!regionesMap.has(regionKey)) {
+      regionesMap.set(regionKey, { id: region.id, nombre: region.nombre });
+    }
+
+    if (!comunasMaps.has(regionKey)) {
+      comunasMaps.set(regionKey, new Map());
+    }
+    const byComuna = comunasMaps.get(regionKey);
+    if (!byComuna.has(comuna.id)) {
+      byComuna.set(comuna.id, { id: comuna.id, nombre: comuna.nombre });
+    }
+  }
+
+  const regiones = Array.from(regionesMap.values()).sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, 'es')
+  );
+
+  const comunasByRegion = {};
+  for (const [regionKey, byComuna] of comunasMaps) {
+    comunasByRegion[regionKey] = Array.from(byComuna.values()).sort((a, b) =>
+      a.nombre.localeCompare(b.nombre, 'es')
+    );
+  }
+
+  return { regiones, comunasByRegion };
+}

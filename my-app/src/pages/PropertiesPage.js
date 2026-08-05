@@ -34,19 +34,35 @@ const PropertiesPage = ({ operationType }) => {
 
                 // If coming from legacy route with operationType prop
                 let operacionId = qOperacion || null;
+                let operacionIds = null;
 
                 if (operationType && !operacionId) {
-                    const { data: opData, error: opError } = await supabase
-                        .from('tipos_operacion')
-                        .select('id, nombre')
-                        .ilike('nombre', operationType)
-                        .single();
+                    // /arriendo includes all operation types whose name contains "Arriendo"
+                    // (e.g. "Arriendo" and "Arriendo de temporada")
+                    if (operationType === 'Arriendo') {
+                        const { data: opData, error: opError } = await supabase
+                            .from('tipos_operacion')
+                            .select('id, nombre')
+                            .ilike('nombre', '%Arriendo%');
 
-                    if (opError) throw opError;
-                    if (!opData) throw new Error('Operation type not found');
+                        if (opError) throw opError;
+                        if (!opData || opData.length === 0) throw new Error('Operation type not found');
 
-                    setTitle(`Propiedades en ${opData.nombre}`);
-                    operacionId = opData.id;
+                        setTitle('Propiedades en Arriendo');
+                        operacionIds = opData.map((op) => op.id);
+                    } else {
+                        const { data: opData, error: opError } = await supabase
+                            .from('tipos_operacion')
+                            .select('id, nombre')
+                            .ilike('nombre', operationType)
+                            .single();
+
+                        if (opError) throw opError;
+                        if (!opData) throw new Error('Operation type not found');
+
+                        setTitle(`Propiedades en ${opData.nombre}`);
+                        operacionId = opData.id;
+                    }
                 }
 
                 // --- Resolve region filter ---
@@ -82,7 +98,9 @@ const PropertiesPage = ({ operationType }) => {
                     .eq('estado', 'publicada');
 
                 // Apply filters
-                if (operacionId) {
+                if (operacionIds) {
+                    query = query.in('operacion_id', operacionIds);
+                } else if (operacionId) {
                     query = query.eq('operacion_id', operacionId);
                 }
                 if (qTipo) {
@@ -169,7 +187,7 @@ const PropertiesPage = ({ operationType }) => {
 
                 {/* Filter search bar */}
                 <div className="mb-12">
-                    <HeroSearch className="mt-0" />
+                    <HeroSearch className="mt-0" operationType={operationType} />
                 </div>
 
                 {loading ? (

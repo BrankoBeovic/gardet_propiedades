@@ -110,7 +110,7 @@ const SobreNosotros = () => {
         <div className="min-h-screen bg-obsidian">
             {/* Page Header */}
             <SectionHeader
-                label="GARDET PROPIEDADES"
+                label="Pasión"
                 title="Sobre Nosotros"
                 as="h1"
                 className="text-center pt-24 lg:pt-32 pb-10 lg:pb-14 px-4 relative z-10"
@@ -376,11 +376,11 @@ const SobreNosotros = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="btn-obsidian disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="block w-full text-center px-6 sm:px-8 border border-[#2C2C2C] text-[#2C2C2C] hover:bg-gold hover:text-obsidian hover:border-gold py-2.5 text-xs font-jakarta font-bold uppercase tracking-wider rounded-xl transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? (
                                     <span className="flex items-center justify-center gap-2">
-                                        <span className="inline-block w-4 h-4 border-2 border-ivory/30 border-t-ivory rounded-full animate-spin" />
+                                        <span className="inline-block w-4 h-4 border-2 border-[#2C2C2C]/30 border-t-[#2C2C2C] rounded-full animate-spin" />
                                         Enviando...
                                     </span>
                                 ) : (

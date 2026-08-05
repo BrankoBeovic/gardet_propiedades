@@ -76,13 +76,13 @@ const Contacto = () => {
                 </p>
 
                 <div
-                    className="card-dark rounded-xl p-8 sn-rise"
+                    className="card-light rounded-xl p-8 sn-rise"
                     style={{ '--sn-delay': 400 }}
                 >
                     <form className="space-y-5" onSubmit={handleSubmit}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
-                                <label htmlFor="nombre" className="block text-sm font-jakarta font-medium text-ivory/70 mb-2">
+                                <label htmlFor="nombre" className="block text-sm font-jakarta font-medium text-[#2C2C2C] mb-2">
                                     Nombre
                                 </label>
                                 <input
@@ -91,14 +91,14 @@ const Contacto = () => {
                                     type="text"
                                     required
                                     autoComplete="given-name"
-                                    className="input-dark"
+                                    className="input-light"
                                     placeholder="Tu nombre"
                                     value={form.nombre}
                                     onChange={handleChange}
                                 />
                             </div>
                             <div>
-                                <label htmlFor="apellido" className="block text-sm font-jakarta font-medium text-ivory/70 mb-2">
+                                <label htmlFor="apellido" className="block text-sm font-jakarta font-medium text-[#2C2C2C] mb-2">
                                     Apellido
                                 </label>
                                 <input
@@ -107,7 +107,7 @@ const Contacto = () => {
                                     type="text"
                                     required
                                     autoComplete="family-name"
-                                    className="input-dark"
+                                    className="input-light"
                                     placeholder="Tu apellido"
                                     value={form.apellido}
                                     onChange={handleChange}
@@ -116,7 +116,7 @@ const Contacto = () => {
                         </div>
 
                         <div>
-                            <label htmlFor="email" className="block text-sm font-jakarta font-medium text-ivory/70 mb-2">
+                            <label htmlFor="email" className="block text-sm font-jakarta font-medium text-[#2C2C2C] mb-2">
                                 Email
                             </label>
                             <input
@@ -125,7 +125,7 @@ const Contacto = () => {
                                 type="email"
                                 required
                                 autoComplete="email"
-                                className="input-dark"
+                                className="input-light"
                                 placeholder="correo@ejemplo.com"
                                 value={form.email}
                                 onChange={handleChange}
@@ -133,7 +133,7 @@ const Contacto = () => {
                         </div>
 
                         <div>
-                            <label htmlFor="numero" className="block text-sm font-jakarta font-medium text-ivory/70 mb-2">
+                            <label htmlFor="numero" className="block text-sm font-jakarta font-medium text-[#2C2C2C] mb-2">
                                 Teléfono
                             </label>
                             <input
@@ -142,7 +142,7 @@ const Contacto = () => {
                                 type="tel"
                                 required
                                 autoComplete="tel"
-                                className="input-dark"
+                                className="input-light"
                                 placeholder="+56 9 1234 5678"
                                 value={form.numero}
                                 onChange={handleChange}
@@ -150,7 +150,7 @@ const Contacto = () => {
                         </div>
 
                         <div>
-                            <label htmlFor="mensaje" className="block text-sm font-jakarta font-medium text-ivory/70 mb-2">
+                            <label htmlFor="mensaje" className="block text-sm font-jakarta font-medium text-[#2C2C2C] mb-2">
                                 Mensaje
                             </label>
                             <textarea
@@ -158,7 +158,7 @@ const Contacto = () => {
                                 name="mensaje"
                                 required
                                 rows={5}
-                                className="input-dark resize-y min-h-[120px]"
+                                className="input-light resize-y min-h-[120px]"
                                 placeholder="Cuéntanos en qué podemos ayudarte..."
                                 value={form.mensaje}
                                 onChange={handleChange}
@@ -166,13 +166,13 @@ const Contacto = () => {
                         </div>
 
                         {error && (
-                            <div className="text-red-400 text-sm text-center font-jakarta bg-red-400/10 border border-red-400/20 rounded-md py-2 px-3">
+                            <div className="rounded-lg px-4 py-3 text-sm text-center font-jakarta bg-red-50 border border-red-200 text-red-700">
                                 {error}
                             </div>
                         )}
 
                         {success && (
-                            <div className="text-green-400 text-sm text-center font-jakarta bg-green-400/10 border border-green-400/20 rounded-md py-2 px-3">
+                            <div className="rounded-lg px-4 py-3 text-sm text-center font-jakarta bg-green-50 border border-green-200 text-green-700">
                                 Gracias por contactarnos. Hemos recibido tu mensaje y te responderemos pronto.
                             </div>
                         )}
@@ -180,11 +180,11 @@ const Contacto = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="block w-full text-center px-6 sm:px-8 border border-[#2C2C2C] text-[#2C2C2C] hover:bg-gold hover:text-obsidian hover:border-gold py-2.5 text-xs font-jakarta font-bold uppercase tracking-wider rounded-xl transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? (
                                 <span className="flex items-center justify-center gap-2">
-                                    <span className="inline-block w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin"></span>
+                                    <span className="inline-block w-4 h-4 border-2 border-[#2C2C2C]/30 border-t-[#2C2C2C] rounded-full animate-spin"></span>
                                     Enviando...
                                 </span>
                             ) : 'Enviar mensaje'}
