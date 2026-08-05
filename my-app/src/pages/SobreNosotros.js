@@ -141,7 +141,7 @@ const SobreNosotros = () => {
                             </h2>
                             <div className={`h-px w-16 bg-gold/70 ${introVisible ? 'sn-line' : 'opacity-0'}`} style={{ '--sn-delay': 240 }} />
                             <p className={`font-jakarta text-[15px] sm:text-base text-[#4A4A4A] leading-[1.85] font-light ${introVisible ? 'sn-rise' : 'opacity-0'}`} style={{ '--sn-delay': 280 }}>
-                                En Gardet Propiedades, redefinimos la experiencia inmobiliaria de alto estándar. Somos una corredora y consultora especializada en la comercialización de viviendas exclusivas en los sectores más privilegiados de Santiago: Lo Barnechea, Las Condes, Vitacura y Providencia.
+                                En Gardet Propiedades, redefinimos la experiencia inmobiliaria de alto estándar. Somos una corredora y consultora especializada en la comercialización de viviendas exclusivas en los sectores más exclusivos de cada región de nuestro país.
                             </p>
                         </div>
                     </div>
