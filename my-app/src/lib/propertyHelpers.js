@@ -74,10 +74,10 @@ export const PROPERTY_LIST_SELECT = `
 `;
 
 const ESTADO_BADGE_CLASSES = {
-  borrador: 'bg-ivory/10 text-ivory/50 border-ivory/20',
-  publicada: 'bg-green-500/20 text-green-400 border-green-500/30',
-  vendida: 'bg-gold/20 text-gold border-gold/30',
-  arrendada: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  borrador: 'bg-[#2C2C2C]/8 text-[#4A4A4A] border-[#2C2C2C]/15',
+  publicada: 'bg-green-50 text-green-700 border-green-200',
+  vendida: 'bg-gold/15 text-[#7E6649] border-gold/40',
+  arrendada: 'bg-purple-50 text-purple-700 border-purple-200',
 };
 
 /**

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
 import HeroSearch from '../components/HeroSearch';
+import SectionHeader from '../components/SectionHeader';
 import quieresVenderImg from '../assets/imagen_quieres_vender.webp';
 import louisImg from '../assets/Louis_home.webp';
 import { peekPendingScroll, restoreScrollY, shouldSkipHomeEntranceAnimations } from '../utils/scrollMemory';
@@ -26,7 +27,7 @@ const ABOUT_HEADLINE = 'SOMOS UNA CORREDORA BOUTIQUE ESPECIALIZADA EN LA COMERCI
 
 const ABOUT_PARAGRAPHS = [
     'Somos una corredora especializada en la comercialización de viviendas exclusivas en las mejores zonas de nuestro país.',
-    'Como consultora experta, la firma dispone de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario.',
+    'Como consultora experta, disponemos de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario.',
     'Ofrecemos un servicio cercano y de máxima calidad, donde los clientes están siempre acompañados de un consultor especializado que asesorará y atenderá durante todo el proceso.',
 ];
 
@@ -423,20 +424,13 @@ const Home = () => {
             </div>
 
             {/* Sobre Nosotros Header (Dark Background) */}
-            <div className="w-full flex flex-col items-center justify-center text-center py-16 lg:py-24 px-4 relative z-10">
-                <p
-                    className="text-gold text-[11px] sm:text-xs font-jakarta font-semibold tracking-[0.2em] uppercase mb-4"
-                    style={{ paddingLeft: '0.2em' }}
-                >
-                    Trayectoria
-                </p>
-                <h2 className="title-editorial text-3xl sm:text-4xl lg:text-[42px] text-ivory tracking-wide">
-                    Sobre Nosotros
-                </h2>
-                <div className="flex justify-center mt-6 w-full">
-                    <div className="w-24 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent"></div>
-                </div>
-            </div>
+            <SectionHeader
+                label="Trayectoria"
+                title="Sobre Nosotros"
+                as="h2"
+                className="w-full flex flex-col items-center justify-center text-center py-16 lg:py-24 px-4 relative z-10"
+            />
+
 
             {/* Sobre Nosotros Content */}
             <section ref={aboutRef} className="w-full relative z-10 overflow-hidden lg:bg-transparent flex flex-col">
@@ -548,20 +542,13 @@ const Home = () => {
             {/* Featured Properties (Clean Perpetual Showroom Marquee) */}
             <div className="overflow-hidden relative">
                 {/* Section Header — vertically & horizontally centered band */}
-                <div className="w-full min-h-[200px] lg:min-h-[240px] flex flex-col items-center justify-center text-center px-4">
-                    <p
-                        className="text-gold text-[11px] sm:text-xs font-jakarta font-semibold tracking-[0.2em] uppercase mb-3"
-                        style={{ paddingLeft: '0.2em' }}
-                    >
-                        SELECCIÓN
-                    </p>
-                    <h2 className="title-editorial text-3xl sm:text-4xl text-ivory tracking-wide">
-                        Propiedades Destacadas
-                    </h2>
-                    <div className="flex justify-center mt-4 w-full">
-                        <div className="w-24 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent"></div>
-                    </div>
-                </div>
+                <SectionHeader
+                    label="SELECCIÓN"
+                    title="Propiedades Destacadas"
+                    as="h2"
+                    className="w-full min-h-[200px] lg:min-h-[240px] flex flex-col items-center justify-center text-center px-4"
+                />
+
 
                 <div className="pb-16">
                 {loading ? (

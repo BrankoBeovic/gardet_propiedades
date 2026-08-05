@@ -12,10 +12,11 @@ function UfChip({ valorFormatted }) {
 
     return (
         <span
-            className="text-[11px] font-mono tracking-wider text-ivory/60 whitespace-nowrap"
+            className="text-[11px] font-mono tracking-wider whitespace-nowrap"
             title="Valor UF del día"
         >
-            <span className="text-gold">UF</span> {valorFormatted}
+            <span className="text-gold">UF</span>{' '}
+            <span className="text-ivory">{valorFormatted}</span>
         </span>
     );
 }
@@ -53,7 +54,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Desktop Navigation — right */}
-                <nav className="hidden lg:flex space-x-8 text-xs font-mono tracking-wider uppercase text-slate-400">
+                <nav className="hidden lg:flex space-x-8 text-xs font-mono tracking-wider uppercase text-ivory">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         return (
@@ -76,7 +77,7 @@ const Navbar = () => {
                     </span>
                     <button
                         onClick={() => setIsOpen(!isOpen)}
-                        className="text-slate-400 hover:text-gold transition-colors p-1"
+                        className="text-ivory hover:text-gold transition-colors p-1"
                         aria-label="Abrir menú"
                     >
                         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -86,7 +87,7 @@ const Navbar = () => {
 
             {/* Mobile Dropdown */}
             {isOpen && (
-                <div className="lg:hidden mt-4 pt-4 border-t border-gardet-border font-mono text-xs uppercase tracking-wider text-slate-400 space-y-3 animate-fade-in">
+                <div className="lg:hidden mt-4 pt-4 border-t border-gardet-border font-mono text-xs uppercase tracking-wider text-ivory space-y-3 animate-fade-in">
                     {navItems.map((item) => (
                         <Link
                             key={item.path}

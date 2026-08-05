@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { submitContacto } from '../services/contactService';
+import SectionHeader from '../components/SectionHeader';
 
 const emptyForm = {
     nombre: '',
@@ -61,19 +62,23 @@ const Contacto = () => {
     return (
         <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-24 pb-20">
             <div className="max-w-lg w-full">
-                <div className="text-center mb-10">
-                    <div className="flex justify-center mb-6">
-                        <div className="gold-line"></div>
-                    </div>
-                    <h1 className="title-editorial text-4xl text-ivory">
-                        Contacto
-                    </h1>
-                    <p className="mt-3 text-ivory/40 font-jakarta text-sm">
-                        Completa el formulario y te responderemos a la brevedad
-                    </p>
-                </div>
+                <SectionHeader
+                    label="ESCRÍBENOS"
+                    title="Contacto"
+                    as="h1"
+                    className="text-center mb-4"
+                />
+                <p
+                    className="text-center text-ivory/40 font-jakarta text-sm mb-10 sn-rise"
+                    style={{ '--sn-delay': 280 }}
+                >
+                    Completa el formulario y te responderemos a la brevedad
+                </p>
 
-                <div className="card-dark rounded-xl p-8">
+                <div
+                    className="card-dark rounded-xl p-8 sn-rise"
+                    style={{ '--sn-delay': 400 }}
+                >
                     <form className="space-y-5" onSubmit={handleSubmit}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
@@ -188,7 +193,10 @@ const Contacto = () => {
                 </div>
 
                 <div className="flex justify-center mt-8">
-                    <div className="w-24 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent"></div>
+                    <div
+                        className="w-24 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent sn-line"
+                        style={{ '--sn-delay': 560 }}
+                    />
                 </div>
             </div>
         </div>

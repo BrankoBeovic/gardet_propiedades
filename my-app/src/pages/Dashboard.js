@@ -188,8 +188,8 @@ const Dashboard = () => {
                     <div
                         className={`mb-6 rounded-lg px-4 py-3 text-sm font-jakarta border ${
                             feedback.type === 'success'
-                                ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                                : 'bg-red-400/10 border-red-400/30 text-red-400'
+                                ? 'bg-green-50 border-green-200 text-green-700'
+                                : 'bg-red-50 border-red-200 text-red-700'
                         }`}
                     >
                         {feedback.message}
@@ -246,9 +246,9 @@ const Dashboard = () => {
 
                 {/* Content */}
                 {activeView === 'list' ? (
-                    <div className="card-dark rounded-lg overflow-hidden">
+                    <div className="card-light overflow-hidden rounded-lg">
                         {listError && (
-                            <div className="m-4 rounded-lg px-4 py-3 text-sm font-jakarta bg-red-400/10 border border-red-400/30 text-red-400">
+                            <div className="m-4 rounded-lg px-4 py-3 text-sm font-jakarta bg-red-50 border border-red-200 text-red-700">
                                 {listError}
                             </div>
                         )}

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
 import HeroSearch from '../components/HeroSearch';
+import SectionHeader from '../components/SectionHeader';
 import { PROPERTY_LIST_SELECT } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
@@ -154,15 +155,11 @@ const PropertiesPage = ({ operationType }) => {
             <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-8">
-                    <p className="text-gold text-xs font-jakarta font-semibold tracking-descriptor uppercase mb-3">
-                        CATÁLOGO
-                    </p>
-                    <h1 className="title-editorial text-3xl sm:text-4xl lg:text-5xl text-ivory">
-                        {title || (operationType ? `Propiedades en ${operationType}` : 'Resultados de Búsqueda')}
-                    </h1>
-                    <div className="flex justify-center mt-4">
-                        <div className="gold-line"></div>
-                    </div>
+                    <SectionHeader
+                        label="CATÁLOGO"
+                        title={title || (operationType ? `Propiedades en ${operationType}` : 'Resultados de Búsqueda')}
+                        as="h1"
+                    />
                     {activeFilterCount > 0 && !operationType && (
                         <p className="mt-4 text-ivory/40 font-jakarta text-sm">
                             {properties.length} {properties.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas'} · {activeFilterCount} {activeFilterCount === 1 ? 'filtro activo' : 'filtros activos'}

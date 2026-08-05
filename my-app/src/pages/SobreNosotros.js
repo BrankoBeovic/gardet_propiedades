@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { submitContacto } from '../services/contactService';
+import SectionHeader from '../components/SectionHeader';
 import sobreNosotrosImg from '../assets/Sobrenosotros.webp';
 import sobreNosotrosImg2 from '../assets/sobrenosotros2.webp';
 
@@ -108,17 +109,13 @@ const SobreNosotros = () => {
     return (
         <div className="min-h-screen bg-obsidian">
             {/* Page Header */}
-            <div className="text-center pt-24 lg:pt-32 pb-10 lg:pb-14 px-4 relative z-10">
-                <p className="text-gold text-[11px] sm:text-xs font-jakarta font-semibold tracking-[0.2em] uppercase mb-4 sn-fade" style={{ '--sn-delay': 80 }}>
-                    GARDET PROPIEDADES
-                </p>
-                <h1 className="title-editorial text-3xl sm:text-4xl lg:text-[46px] text-ivory tracking-wide sn-clip-up" style={{ '--sn-delay': 160 }}>
-                    Sobre Nosotros
-                </h1>
-                <div className="flex justify-center mt-6">
-                    <div className="w-28 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent sn-line" style={{ '--sn-delay': 320 }} />
-                </div>
-            </div>
+            <SectionHeader
+                label="GARDET PROPIEDADES"
+                title="Sobre Nosotros"
+                as="h1"
+                className="text-center pt-24 lg:pt-32 pb-10 lg:pb-14 px-4 relative z-10"
+            />
+
 
             {/* Intro — Quiénes Somos */}
             <section ref={introRef} className="relative z-10 w-full bg-[#F5F2EC] overflow-hidden">

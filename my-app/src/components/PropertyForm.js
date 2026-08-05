@@ -91,6 +91,16 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
     });
 
     const [images, setImages] = useState([]);
+    const [lightboxUrl, setLightboxUrl] = useState(null);
+
+    useEffect(() => {
+        if (!lightboxUrl) return undefined;
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') setLightboxUrl(null);
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [lightboxUrl]);
 
     useEffect(() => {
         const loadDropdowns = async () => {
@@ -394,18 +404,28 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
         }
     };
 
-    const labelClass = "block text-sm font-jakarta font-medium text-ivory/70 mb-1.5";
-    const fieldErrorClass = "mt-1 text-xs text-red-400 font-jakarta";
+    const labelClass = 'block text-sm font-jakarta font-medium text-[#2C2C2C] mb-1.5';
+    const fieldErrorClass = 'mt-1 text-xs text-red-600 font-jakarta';
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 card-dark rounded-xl p-6 lg:p-8" noValidate>
-            <h2 className="title-editorial text-2xl text-ivory">
-                {property ? 'Editar Propiedad' : 'Nueva Propiedad'}
-            </h2>
-            <div className="gold-line"></div>
+        <>
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-6 card-light p-6 lg:p-8"
+            noValidate
+        >
+            <div>
+                <p className="text-[#A1917B] text-[11px] sm:text-xs font-jakarta font-semibold tracking-[5px] uppercase mb-3">
+                    Dashboard
+                </p>
+                <h2 className="title-editorial text-2xl text-[#2C2C2C] tracking-wide">
+                    {property ? 'Editar Propiedad' : 'Nueva Propiedad'}
+                </h2>
+                <div className="mt-4 h-px w-16 bg-gold/70" />
+            </div>
 
             {formError && (
-                <div className="rounded-lg px-4 py-3 text-sm font-jakarta bg-red-400/10 border border-red-400/30 text-red-400">
+                <div className="rounded-lg px-4 py-3 text-sm font-jakarta bg-red-50 border border-red-200 text-red-700">
                     {formError}
                 </div>
             )}
@@ -419,7 +439,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="titulo"
                         value={formData.titulo}
                         onChange={handleChange}
-                        className="input-dark"
+                        className="input-light"
                     />
                     {fieldErrors.titulo && <p className={fieldErrorClass}>{fieldErrors.titulo}</p>}
                 </div>
@@ -432,7 +452,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         value={formData.precio_uf}
                         onChange={handleChange}
                         step="0.01"
-                        className="input-dark"
+                        className="input-light"
                     />
                     {fieldErrors.precio_uf && <p className={fieldErrorClass}>{fieldErrors.precio_uf}</p>}
                 </div>
@@ -443,7 +463,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="tipo_propiedad_id"
                         value={formData.tipo_propiedad_id}
                         onChange={handleChange}
-                        className="select-dark"
+                        className="select-light"
                     >
                         <option value="">Seleccionar...</option>
                         {dropdownData.tipos_propiedad.map(tipo => (
@@ -459,7 +479,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="operacion_id"
                         value={formData.operacion_id}
                         onChange={handleChange}
-                        className="select-dark"
+                        className="select-light"
                     >
                         <option value="">Seleccionar...</option>
                         {dropdownData.tipos_operacion.map(tipo => (
@@ -477,7 +497,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         value={formData.mt2_construidos}
                         onChange={handleChange}
                         step="0.01"
-                        className="input-dark"
+                        className="input-light"
                     />
                     {fieldErrors.mt2_construidos && <p className={fieldErrorClass}>{fieldErrors.mt2_construidos}</p>}
                 </div>
@@ -490,7 +510,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         value={formData.mt2_terreno}
                         onChange={handleChange}
                         step="0.01"
-                        className="input-dark"
+                        className="input-light"
                     />
                     {fieldErrors.mt2_terreno && <p className={fieldErrorClass}>{fieldErrors.mt2_terreno}</p>}
                 </div>
@@ -502,7 +522,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="habitaciones"
                         value={formData.habitaciones}
                         onChange={handleChange}
-                        className="input-dark"
+                        className="input-light"
                     />
                     {fieldErrors.habitaciones && <p className={fieldErrorClass}>{fieldErrors.habitaciones}</p>}
                 </div>
@@ -514,7 +534,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="banos"
                         value={formData.banos}
                         onChange={handleChange}
-                        className="input-dark"
+                        className="input-light"
                     />
                     {fieldErrors.banos && <p className={fieldErrorClass}>{fieldErrors.banos}</p>}
                 </div>
@@ -525,7 +545,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="estado"
                         value={formData.estado}
                         onChange={handleChange}
-                        className="select-dark"
+                        className="select-light"
                     >
                         <option value="borrador">Borrador</option>
                         <option value="publicada">Publicada</option>
@@ -541,7 +561,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         name="region_id"
                         value={formData.region_id}
                         onChange={handleChange}
-                        className="select-dark"
+                        className="select-light"
                     >
                         <option value="">Seleccionar...</option>
                         {dropdownData.regiones.map(region => (
@@ -558,7 +578,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                         value={formData.comuna_id}
                         onChange={handleChange}
                         disabled={!formData.region_id}
-                        className="select-dark disabled:opacity-40"
+                        className="select-light disabled:opacity-40"
                     >
                         <option value="">Seleccionar...</option>
                         {dropdownData.comunas.map(comuna => (
@@ -576,7 +596,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                     name="direccion_referencial"
                     value={formData.direccion_referencial}
                     onChange={handleChange}
-                    className="input-dark"
+                    className="input-light"
                     placeholder="Ingresa la dirección de la propiedad"
                 />
                 {fieldErrors.direccion_referencial && <p className={fieldErrorClass}>{fieldErrors.direccion_referencial}</p>}
@@ -589,25 +609,25 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                     value={formData.descripcion}
                     onChange={handleChange}
                     rows={4}
-                    className="input-dark resize-none"
+                    className="input-light resize-none"
                 />
                 {fieldErrors.descripcion && <p className={fieldErrorClass}>{fieldErrors.descripcion}</p>}
             </div>
 
             {/* Location Picker - Google Maps desactivado temporalmente */}
-            <div className="bg-obsidian border border-obsidian-50/10 rounded-lg p-6 text-center">
-                <p className="text-ivory/30 text-sm font-jakarta">📍 Mapa de ubicación desactivado temporalmente</p>
-                <p className="text-ivory/20 text-xs font-jakarta mt-1">Ingresa la dirección manualmente en el campo de arriba</p>
+            <div className="bg-white/70 border border-[#2C2C2C]/12 rounded-lg p-6 text-center">
+                <p className="text-[#4A4A4A] text-sm font-jakarta">Mapa de ubicación desactivado temporalmente</p>
+                <p className="text-[#4A4A4A]/60 text-xs font-jakarta mt-1">Ingresa la dirección manualmente en el campo de arriba</p>
             </div>
 
             {/* Image Upload */}
             <div>
                 <label className={labelClass}>Imágenes (JPEG, PNG o WebP · máx. 5 MB)</label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border border-dashed border-obsidian-50/20 rounded-lg hover:border-gold/30 transition-colors cursor-pointer">
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border border-dashed border-[#2C2C2C]/20 rounded-lg hover:border-gold/50 bg-white/50 transition-colors cursor-pointer">
                     <div className="space-y-1 text-center">
-                        <Upload className="mx-auto h-10 w-10 text-ivory/20" />
-                        <div className="flex text-sm text-ivory/40 font-jakarta">
-                            <label className="relative cursor-pointer font-medium text-gold hover:text-gold-light transition-colors">
+                        <Upload className="mx-auto h-10 w-10 text-[#A1917B]/50" />
+                        <div className="flex text-sm text-[#4A4A4A] font-jakarta">
+                            <label className="relative cursor-pointer font-medium text-[#A1917B] hover:text-[#7E6649] transition-colors">
                                 <span>Subir imágenes</span>
                                 <input
                                     type="file"
@@ -624,25 +644,39 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 {images.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                         {images.map((image, index) => (
-                            <div key={index} className="relative group rounded-lg overflow-hidden border border-obsidian-50/10">
-                                <img
-                                    src={image.url}
-                                    alt={`Preview ${index}`}
-                                    className="h-28 w-full object-cover"
-                                />
+                            <div key={index} className="relative group rounded-lg overflow-hidden border border-[#2C2C2C]/10 bg-white">
                                 <button
                                     type="button"
-                                    onClick={() => handleRemoveImage(index)}
-                                    className="absolute top-1.5 right-1.5 bg-red-500/80 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => setLightboxUrl(image.url)}
+                                    className="block w-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                                    aria-label={`Ver imagen ${index + 1} en grande`}
+                                >
+                                    <img
+                                        src={image.url}
+                                        alt={`Preview ${index}`}
+                                        className="h-28 w-full object-cover"
+                                    />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveImage(index);
+                                    }}
+                                    className="absolute top-1.5 right-1.5 bg-red-500/90 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    aria-label="Eliminar imagen"
                                 >
                                     <X className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => handleSetCover(index)}
-                                    className={`absolute bottom-1.5 left-1.5 px-2 py-0.5 text-xs font-jakarta rounded ${image.es_portada
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSetCover(index);
+                                    }}
+                                    className={`absolute bottom-1.5 left-1.5 px-2 py-0.5 text-xs font-jakarta rounded z-10 ${image.es_portada
                                         ? 'bg-gold text-obsidian font-semibold'
-                                        : 'bg-obsidian/70 text-ivory/70 hover:bg-gold/20'
+                                        : 'bg-[#2C2C2C]/70 text-white hover:bg-gold/80'
                                         } transition-colors`}
                                 >
                                     {image.es_portada ? 'Portada' : 'Marcar portada'}
@@ -654,28 +688,54 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-4 border-t border-obsidian-50/10">
+            <div className="flex justify-end space-x-3 pt-4 border-t border-[#2C2C2C]/10">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-5 py-2.5 border border-obsidian-50/20 text-ivory/50 hover:text-ivory hover:border-ivory/30 font-jakarta text-sm font-medium transition-colors rounded-xl cursor-pointer"
+                    className="px-5 py-2.5 border border-[#2C2C2C]/20 text-[#4A4A4A] hover:text-[#2C2C2C] hover:border-[#2C2C2C]/40 font-jakarta text-sm font-medium transition-colors rounded-xl cursor-pointer"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
                     disabled={loading}
-                    className="btn-gold px-6 py-2.5 disabled:opacity-50"
+                    className="btn-obsidian px-6 py-2.5 disabled:opacity-50"
                 >
                     {loading ? (
                         <span className="flex items-center gap-2">
-                            <span className="inline-block w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin"></span>
+                            <span className="inline-block w-4 h-4 border-2 border-ivory/30 border-t-ivory rounded-full animate-spin"></span>
                             Guardando...
                         </span>
                     ) : 'Guardar Propiedad'}
                 </button>
             </div>
         </form>
+
+        {lightboxUrl && (
+            <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 sm:p-8"
+                onClick={() => setLightboxUrl(null)}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Vista ampliada de imagen"
+            >
+                <button
+                    type="button"
+                    onClick={() => setLightboxUrl(null)}
+                    className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white/80 hover:text-white p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                    aria-label="Cerrar"
+                >
+                    <X className="h-6 w-6" />
+                </button>
+                <img
+                    src={lightboxUrl}
+                    alt="Vista ampliada"
+                    className="max-h-full max-w-full object-contain rounded-sm shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                />
+            </div>
+        )}
+        </>
     );
 };
 

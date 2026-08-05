@@ -14,7 +14,8 @@ import {
     LandPlot,
     ChevronLeft,
     ChevronRight,
-    MessageCircle
+    MessageCircle,
+    X
 } from 'lucide-react';
 import { queueReturnScroll } from '../utils/scrollMemory';
 import { useAuth } from '../auth/AuthProvider';
@@ -33,6 +34,7 @@ const PropertyDetail = () => {
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState(null);
     const [activeImage, setActiveImage] = useState(0);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
 
     useDocumentMeta(
         property?.titulo,
@@ -77,6 +79,23 @@ const PropertyDetail = () => {
         const images = property?.propiedades_imagenes || [];
         setActiveImage((prev) => (prev - 1 + images.length) % images.length);
     };
+
+    useEffect(() => {
+        if (!lightboxOpen) return undefined;
+        const imageCount = property?.propiedades_imagenes?.length || 0;
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') setLightboxOpen(false);
+            if (imageCount <= 1) return;
+            if (e.key === 'ArrowLeft') {
+                setActiveImage((prev) => (prev - 1 + imageCount) % imageCount);
+            }
+            if (e.key === 'ArrowRight') {
+                setActiveImage((prev) => (prev + 1) % imageCount);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [lightboxOpen, property?.propiedades_imagenes?.length]);
 
     const handleBack = () => {
         const saved = queueReturnScroll();
@@ -166,114 +185,124 @@ const PropertyDetail = () => {
                 </button>
 
                 {/* Main Content */}
-                <div className="bg-[#1C1C1E] border border-gold/25 rounded-2xl overflow-hidden shadow-2xl shadow-black/80 relative z-[1]">
-                    {/* Header with Operation Badge */}
-                    <div className="relative">
-                        {/* Image Gallery */}
-                        <div className="relative bg-[#141416]">
-                            <div className="relative h-[450px] sm:h-[500px] bg-[#141416]">
-                                {currentImage ? (
+                <div className="card-light rounded-2xl overflow-hidden shadow-lg shadow-black/20">
+                    {/* Image Gallery */}
+                    <div className="relative bg-[#EBE7E0]">
+                        <div className="relative h-[450px] sm:h-[500px] bg-[#EBE7E0]">
+                            {currentImage ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setLightboxOpen(true)}
+                                    className="block w-full h-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-inset"
+                                    aria-label="Ver imagen en grande"
+                                >
                                     <img
                                         src={currentImage}
                                         alt={property.titulo}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover pointer-events-none"
                                     />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <Home className="h-24 w-24 text-gold/30" />
-                                    </div>
-                                )}
-
-                                {/* Dark overlay gradient */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#141416] via-transparent to-black/30 pointer-events-none" />
-
-                                {/* Operation Badge */}
-                                {property.tipos_operacion?.nombre && (
-                                    <div className="absolute top-6 left-6 bg-gold text-obsidian px-5 py-2 font-jakarta font-bold text-sm uppercase tracking-widest shadow-lg z-10">
-                                        {property.tipos_operacion.nombre}
-                                    </div>
-                                )}
-
-                                {/* Estado Badge */}
-                                <div className={`absolute top-6 right-6 px-4 py-1.5 text-sm font-jakarta font-medium border shadow-lg z-10 ${getEstadoBadgeClasses(property.estado)}`}>
-                                    {property.estado?.charAt(0).toUpperCase() + property.estado?.slice(1)}
+                                </button>
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <Home className="h-24 w-24 text-[#A1917B]/40" />
                                 </div>
+                            )}
 
-                                {/* Image Navigation */}
-                                {images.length > 1 && (
-                                    <>
-                                        <button
-                                            onClick={prevImage}
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-[#141416]/80 hover:bg-gold text-ivory hover:text-obsidian p-3 rounded-full transition-all duration-300 shadow-md z-10"
-                                        >
-                                            <ChevronLeft className="h-5 w-5" />
-                                        </button>
-                                        <button
-                                            onClick={nextImage}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-[#141416]/80 hover:bg-gold text-ivory hover:text-obsidian p-3 rounded-full transition-all duration-300 shadow-md z-10"
-                                        >
-                                            <ChevronRight className="h-5 w-5" />
-                                        </button>
-                                    </>
-                                )}
+                            {/* Operation Badge */}
+                            {property.tipos_operacion?.nombre && (
+                                <div className="absolute top-6 left-6 bg-gold text-obsidian px-5 py-2 font-jakarta font-bold text-sm uppercase tracking-widest shadow-lg z-10 rounded">
+                                    {property.tipos_operacion.nombre}
+                                </div>
+                            )}
 
-                                {/* Image Counter Badge */}
-                                {images.length > 1 && (
-                                    <div className="absolute bottom-4 right-6 bg-[#141416]/90 border border-gold/30 text-gold px-3.5 py-1 text-xs font-jakarta font-bold rounded shadow-md z-10">
-                                        {activeImage + 1} / {images.length}
-                                    </div>
-                                )}
+                            {/* Estado Badge */}
+                            <div className={`absolute top-6 right-6 px-4 py-1.5 text-sm font-jakarta font-medium border shadow-lg z-10 rounded-full ${getEstadoBadgeClasses(property.estado)}`}>
+                                {property.estado?.charAt(0).toUpperCase() + property.estado?.slice(1)}
                             </div>
 
-                            {/* Image Thumbnails Strip */}
+                            {/* Image Navigation */}
                             {images.length > 1 && (
-                                <div className="bg-[#141416] border-t border-gold/20 p-3 px-6 flex items-center justify-center gap-3 overflow-x-auto">
-                                    {images.map((img, index) => (
-                                        <button
-                                            key={index}
-                                            onClick={() => setActiveImage(index)}
-                                            className={`relative w-16 h-12 flex-shrink-0 rounded overflow-hidden border-2 transition-all duration-200 ${activeImage === index
-                                                ? 'border-gold scale-105 shadow-md shadow-gold/20'
-                                                : 'border-transparent hover:border-ivory/40 opacity-60 hover:opacity-100'
-                                                }`}
-                                        >
-                                            <img
-                                                src={img.url}
-                                                alt={`Miniatura ${index + 1}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </button>
-                                    ))}
+                                <>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            prevImage();
+                                        }}
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-gold text-[#2C2C2C] hover:text-obsidian p-3 rounded-full transition-all duration-300 shadow-md z-10"
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            nextImage();
+                                        }}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-gold text-[#2C2C2C] hover:text-obsidian p-3 rounded-full transition-all duration-300 shadow-md z-10"
+                                    >
+                                        <ChevronRight className="h-5 w-5" />
+                                    </button>
+                                </>
+                            )}
+
+                            {/* Image Counter Badge */}
+                            {images.length > 1 && (
+                                <div className="absolute bottom-4 right-6 bg-[#2C2C2C]/85 text-white px-3.5 py-1 text-xs font-jakarta font-bold rounded shadow-md z-10">
+                                    {activeImage + 1} / {images.length}
                                 </div>
                             )}
                         </div>
+
+                        {/* Image Thumbnails Strip */}
+                        {images.length > 1 && (
+                            <div className="bg-[#F5F2EC] border-t border-[#2C2C2C]/10 p-3 px-6 flex items-center justify-center gap-3 overflow-x-auto">
+                                {images.map((img, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setActiveImage(index)}
+                                        className={`relative w-16 h-12 flex-shrink-0 rounded overflow-hidden border-2 transition-all duration-200 ${activeImage === index
+                                            ? 'border-gold scale-105 shadow-md shadow-gold/20'
+                                            : 'border-transparent hover:border-[#A1917B]/50 opacity-60 hover:opacity-100'
+                                            }`}
+                                    >
+                                        <img
+                                            src={img.url}
+                                            alt={`Miniatura ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Content Section */}
-                    <div className="p-8 lg:p-10 bg-[#1C1C1E]">
+                    <div className="p-8 lg:p-10 bg-[#F5F2EC]">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                             {/* Left Column - Main Info */}
                             <div className="lg:col-span-2 space-y-8">
                                 {/* Title & Price */}
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                                     <div>
-                                        <h1 className="title-editorial text-3xl lg:text-4xl text-ivory mb-3 break-words">
+                                        <p className="text-[#A1917B] text-[11px] sm:text-xs font-jakarta font-semibold tracking-[5px] uppercase mb-3">
+                                            Propiedad
+                                        </p>
+                                        <h1 className="title-editorial text-3xl lg:text-4xl text-[#2C2C2C] mb-3 break-words tracking-wide">
                                             {property.titulo}
                                         </h1>
-                                        <div className="flex items-center text-slate-300">
-                                            <MapPin className="h-4 w-4 mr-2 text-gold flex-shrink-0" />
+                                        <div className="flex items-center text-[#4A4A4A]">
+                                            <MapPin className="h-4 w-4 mr-2 text-[#A1917B] flex-shrink-0" />
                                             <span className="font-jakarta text-sm break-words">{property.direccion_referencial}</span>
                                         </div>
                                     </div>
                                     <div className="flex-shrink-0">
-                                        <div className="bg-gold text-obsidian px-6 py-4 shadow-lg">
+                                        <div className="bg-gold text-obsidian px-6 py-4 shadow-lg rounded">
                                             <div className="text-xs font-jakarta font-bold uppercase tracking-wider text-obsidian/80">Precio</div>
                                             <div className="text-2xl font-ysabeau font-bold">
                                                 UF {property.precio_uf?.toLocaleString()}
                                             </div>
                                         </div>
                                         {precioClp && (
-                                            <p className="mt-1.5 text-xs text-slate-400 font-jakarta tracking-wide text-right">
+                                            <p className="mt-1.5 text-xs text-[#4A4A4A]/70 font-jakarta tracking-wide text-right">
                                                 {precioClp}
                                             </p>
                                         )}
@@ -283,17 +312,17 @@ const PropertyDetail = () => {
                                 {/* Property Type & Location */}
                                 <div className="flex flex-wrap gap-3">
                                     {property.tipos_propiedad?.nombre && (
-                                        <div className="inline-flex items-center bg-[rgba(20,20,22,0.65)] border border-gold/20 text-ivory px-4 py-2 text-sm font-jakarta rounded">
-                                            <Home className="h-4 w-4 mr-2 text-gold" />
+                                        <div className="inline-flex items-center bg-white/80 border border-[#2C2C2C]/10 text-[#2C2C2C] px-4 py-2 text-sm font-jakarta rounded">
+                                            <Home className="h-4 w-4 mr-2 text-[#A1917B]" />
                                             {property.tipos_propiedad.nombre}
                                         </div>
                                     )}
                                     {property.comunas?.nombre && (
-                                        <div className="inline-flex items-center bg-[rgba(20,20,22,0.65)] border border-gold/20 text-ivory px-4 py-2 text-sm font-jakarta rounded">
-                                            <Building2 className="h-4 w-4 mr-2 text-gold" />
+                                        <div className="inline-flex items-center bg-white/80 border border-[#2C2C2C]/10 text-[#2C2C2C] px-4 py-2 text-sm font-jakarta rounded">
+                                            <Building2 className="h-4 w-4 mr-2 text-[#A1917B]" />
                                             {property.comunas.nombre}
                                             {property.comunas.regiones?.nombre && (
-                                                <span className="text-slate-400 ml-1.5">
+                                                <span className="text-[#4A4A4A]/70 ml-1.5">
                                                     • {property.comunas.regiones.nombre}
                                                 </span>
                                             )}
@@ -309,53 +338,53 @@ const PropertyDetail = () => {
                                         { icon: Maximize, value: property.mt2_construidos, label: 'm² Construidos' },
                                         { icon: LandPlot, value: property.mt2_terreno || '-', label: 'm² Terreno' },
                                     ].map(({ icon: Icon, value, label }, idx) => (
-                                        <div key={idx} className="bg-[rgba(20,20,22,0.65)] border border-gold/20 rounded-lg p-4 text-center hover:border-gold/40 transition-colors shadow-md">
-                                            <Icon className="h-6 w-6 text-gold mx-auto mb-2" />
-                                            <div className="text-xl font-jakarta font-bold text-ivory">{value}</div>
-                                            <div className="text-xs text-slate-400 font-jakarta mt-1">{label}</div>
+                                        <div key={idx} className="bg-white/80 border border-[#2C2C2C]/10 rounded-lg p-4 text-center hover:border-[#A1917B]/40 transition-colors">
+                                            <Icon className="h-6 w-6 text-[#A1917B] mx-auto mb-2" />
+                                            <div className="text-xl font-jakarta font-bold text-[#2C2C2C]">{value}</div>
+                                            <div className="text-xs text-[#4A4A4A]/70 font-jakarta mt-1">{label}</div>
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* Description */}
-                                 <div className="border-t border-gold/20 pt-8">
-                                     <h3 className="text-lg font-jakarta font-bold text-ivory mb-4 flex items-center">
-                                         <Tag className="h-4 w-4 mr-2 text-gold" />
-                                         Descripción
-                                     </h3>
-                                     <p className="text-slate-200 whitespace-pre-line leading-relaxed font-jakarta text-sm bg-[rgba(20,20,22,0.65)] p-6 rounded-xl border border-gold/15 break-words overflow-hidden">
-                                         {property.descripcion}
-                                     </p>
-                                 </div>
+                                <div className="border-t border-[#2C2C2C]/10 pt-8">
+                                    <h3 className="text-lg font-jakarta font-bold text-[#2C2C2C] mb-4 flex items-center">
+                                        <Tag className="h-4 w-4 mr-2 text-[#A1917B]" />
+                                        Descripción
+                                    </h3>
+                                    <p className="text-[#4A4A4A] whitespace-pre-line leading-relaxed font-jakarta text-sm bg-white/70 p-6 rounded-xl border border-[#2C2C2C]/10 break-words overflow-hidden">
+                                        {property.descripcion}
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Right Column - Map & Contact */}
                             <div className="space-y-6">
                                 {/* Location */}
-                                <div className="bg-[rgba(20,20,22,0.65)] rounded-xl p-5 border border-gold/20 shadow-md">
-                                    <h3 className="text-lg font-jakarta font-bold text-ivory mb-4 flex items-center">
-                                        <Map className="h-4 w-4 mr-2 text-gold" />
+                                <div className="bg-white/80 rounded-xl p-5 border border-[#2C2C2C]/10">
+                                    <h3 className="text-lg font-jakarta font-bold text-[#2C2C2C] mb-4 flex items-center">
+                                        <Map className="h-4 w-4 mr-2 text-[#A1917B]" />
                                         Ubicación
                                     </h3>
 
-                                    <div className="h-[250px] bg-[#1C1C1E] rounded-lg flex items-center justify-center border border-gold/15">
-                                        <div className="text-center text-slate-400">
-                                            <MapPin className="h-10 w-10 mx-auto mb-2 text-gold/60" />
-                                            <p className="font-jakarta text-sm font-medium text-ivory">Mapa no disponible</p>
-                                            <p className="text-xs mt-1 text-slate-400">Próximamente</p>
+                                    <div className="h-[250px] bg-[#EBE7E0] rounded-lg flex items-center justify-center border border-[#2C2C2C]/10">
+                                        <div className="text-center text-[#4A4A4A]/70">
+                                            <MapPin className="h-10 w-10 mx-auto mb-2 text-[#A1917B]/60" />
+                                            <p className="font-jakarta text-sm font-medium text-[#2C2C2C]">Mapa no disponible</p>
+                                            <p className="text-xs mt-1">Próximamente</p>
                                         </div>
                                     </div>
 
                                     {/* Address Details */}
-                                    <div className="mt-4 p-4 bg-[#1C1C1E] rounded-lg border border-gold/15">
+                                    <div className="mt-4 p-4 bg-[#F5F2EC] rounded-lg border border-[#2C2C2C]/10">
                                         <div className="flex items-start gap-3">
-                                            <MapPin className="h-4 w-4 text-gold mt-0.5 flex-shrink-0" />
+                                            <MapPin className="h-4 w-4 text-[#A1917B] mt-0.5 flex-shrink-0" />
                                             <div>
-                                                <p className="font-jakarta font-medium text-ivory text-sm">
+                                                <p className="font-jakarta font-medium text-[#2C2C2C] text-sm">
                                                     {property.direccion_referencial}
                                                 </p>
                                                 {property.comunas?.nombre && (
-                                                    <p className="text-xs text-slate-400 font-jakarta mt-1">
+                                                    <p className="text-xs text-[#4A4A4A]/70 font-jakarta mt-1">
                                                         {property.comunas.nombre}
                                                         {property.comunas.regiones?.nombre && (
                                                             <>, {property.comunas.regiones.nombre}</>
@@ -396,6 +425,62 @@ const PropertyDetail = () => {
                     </div>
                 </div>
             </div>
+
+            {lightboxOpen && currentImage && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 sm:p-8"
+                    onClick={() => setLightboxOpen(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Galería ampliada"
+                >
+                    <button
+                        type="button"
+                        onClick={() => setLightboxOpen(false)}
+                        className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white/80 hover:text-white p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors z-10"
+                        aria-label="Cerrar"
+                    >
+                        <X className="h-6 w-6" />
+                    </button>
+
+                    {images.length > 1 && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    prevImage();
+                                }}
+                                className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-gold text-white hover:text-obsidian p-3 rounded-full transition-colors z-10"
+                                aria-label="Imagen anterior"
+                            >
+                                <ChevronLeft className="h-6 w-6" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    nextImage();
+                                }}
+                                className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-gold text-white hover:text-obsidian p-3 rounded-full transition-colors z-10"
+                                aria-label="Imagen siguiente"
+                            >
+                                <ChevronRight className="h-6 w-6" />
+                            </button>
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm font-jakarta bg-black/50 px-3 py-1 rounded-full z-10">
+                                {activeImage + 1} / {images.length}
+                            </div>
+                        </>
+                    )}
+
+                    <img
+                        src={currentImage}
+                        alt={property.titulo}
+                        className="max-h-full max-w-full object-contain rounded-sm shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
         </div>
     );
 };

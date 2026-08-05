@@ -78,6 +78,11 @@
            transition-all duration-300 hover:border-gold/40 relative z-[1];
   }
 
+  /* Solid light card (opaque cream, sits above body monogram) */
+  .card-light {
+    @apply bg-[#F5F2EC] border border-[#2C2C2C]/10 rounded-xl shadow-sm relative z-[1];
+  }
+
   /* Input dark style (solid opaque) */
   .input-dark {
     @apply w-full bg-[#141416] border border-gold/20 rounded-md px-4 py-2.5
@@ -111,6 +116,15 @@
 
   .input-light::placeholder {
     color: rgba(44, 44, 44, 0.35);
+  }
+
+  .select-light {
+    @apply w-full rounded-md px-4 py-2.5 font-jakarta text-sm
+           focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/40
+           transition-all duration-200 appearance-none cursor-pointer;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(44, 44, 44, 0.18);
+    color: #2C2C2C;
   }
 
   .btn-obsidian {
