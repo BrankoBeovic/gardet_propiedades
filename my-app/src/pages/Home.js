@@ -25,15 +25,9 @@ const ABOUT_ESSENCE_LABEL = 'NUESTRA ESENCIA';
 const ABOUT_HEADLINE = 'SOMOS UNA CORREDORA BOUTIQUE ESPECIALIZADA EN LA COMERCIALIZACIÓN DE VIVIENDAS EXCLUSIVAS.';
 
 const ABOUT_PARAGRAPHS = [
-    {
-        text: 'Somos una corredora especializada en la comercialización de viviendas exclusivas en las mejores zonas de nuestro país.',
-    },
-    {
-        text: 'Como consultora experta, la firma dispone de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario.',
-    },
-    {
-        text: 'Ofrecemos un servicio cercano y de máxima calidad, donde los clientes están siempre acompañados de un consultor especializado que asesorará y atenderá durante todo el proceso.',
-    },
+    'Somos una corredora especializada en la comercialización de viviendas exclusivas en las mejores zonas de nuestro país.',
+    'Como consultora experta, la firma dispone de una cuidada cartera de propiedades y cuenta con un equipo comercial altamente cualificado y con una extensa trayectoria en el sector inmobiliario.',
+    'Ofrecemos un servicio cercano y de máxima calidad, donde los clientes están siempre acompañados de un consultor especializado que asesorará y atenderá durante todo el proceso.',
 ];
 
 const SELL_LABEL = 'LOS MEJORES EXPERTOS A TU DISPOSICIÓN';
@@ -48,24 +42,6 @@ const LERP_FACTOR = 0.04; // Smooth interpolation factor (lower = smoother trans
 const DRAG_CLICK_THRESHOLD = 8; // px — below this, treat as tap so Ver Detalles still works
 const FRAME_MS = 1000 / 60; // Baseline frame time for frame-rate-independent motion
 const MAX_FLICK_SPEED = 45; // Cap released momentum (px/frame) so hard flicks stay controlled
-
-function AboutParagraph({ paragraph, className, style }) {
-    if (paragraph.withStrong) {
-        const [before, after] = paragraph.text.split(paragraph.strong);
-        return (
-            <p className={className} style={style}>
-                {before}
-                <strong className="font-semibold text-[#1C1C1C]">{paragraph.strong}</strong>
-                {after}
-            </p>
-        );
-    }
-    return (
-        <p className={className} style={style}>
-            {paragraph.text}
-        </p>
-    );
-}
 
 const Home = () => {
     const [properties, setProperties] = useState([]);
@@ -129,13 +105,14 @@ const Home = () => {
         return animClass;
     };
 
-    const renderAboutParagraph = (paragraph, index, className) => (
-        <AboutParagraph
+    const renderAboutParagraph = (text, index, className) => (
+        <p
             key={index}
-            paragraph={paragraph}
             className={`${className} ${revealClass(isAboutVisible, 'animate-paragraph')}`}
             style={{ '--p-index': index + 1 }}
-        />
+        >
+            {text}
+        </p>
     );
 
     const sellHeadline = (
