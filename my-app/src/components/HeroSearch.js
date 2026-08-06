@@ -15,11 +15,9 @@ const FIELD_CLASS =
     'hover:border-white/30 transition-all duration-300 ' +
     '[&>option]:bg-[#1C1C1E] [&>option]:text-ivory';
 
-// Opaque on touch devices (phone/tablet); frosted glass only on PC (mouse/trackpad)
+// Frosted glass panel, identical on every device
 const PANEL_BG =
-    'absolute inset-0 rounded-2xl bg-[#1C1C1E] border border-white/20 ' +
-    '[@media(hover:hover)_and_(pointer:fine)]:backdrop-blur-xl ' +
-    '[@media(hover:hover)_and_(pointer:fine)]:bg-[#1C1C1E]/75';
+    'absolute inset-0 rounded-2xl backdrop-blur-xl bg-[#1C1C1E]/75 border border-white/20';
 
 /** Map route operationType to tipos_operacion id (Arriendo excludes temporada). */
 function resolveOperacionId(tiposOperacion, operationType) {
@@ -226,7 +224,8 @@ const HeroSearch = ({ className = '', operationType }) => {
             <div className="flex justify-end mt-2.5">
                 <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="inline-flex items-center gap-2 bg-[#1C1C1E] [@media(hover:hover)_and_(pointer:fine)]:backdrop-blur-xl [@media(hover:hover)_and_(pointer:fine)]:bg-[#1C1C1E]/75 border border-white/20 hover:border-gold/40 text-gold hover:text-gold-light px-4 py-2 rounded-xl transition-all duration-300 font-jakarta text-xs font-semibold tracking-wide group cursor-pointer"
+                    className="inline-flex items-center gap-2 backdrop-blur-xl bg-[#1C1C1E]/75 border border-white/20 hover:border-gold/40 text-gold hover:text-gold-light px-4 py-2 rounded-xl transition-all duration-300 font-jakarta text-xs font-semibold tracking-wide group cursor-pointer"
+                    aria-expanded={showAdvanced}
                 >
                     <SlidersHorizontal className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90 text-gold" />
                     <span>Búsqueda avanzada</span>
@@ -234,9 +233,16 @@ const HeroSearch = ({ className = '', operationType }) => {
                 </button>
             </div>
 
-            {/* CONTAINER 2: Advanced Search Panel — same dark frosted treatment */}
-            {showAdvanced && (
-                <div className="relative rounded-2xl overflow-hidden shadow-[0_24px_70px_-20px_rgba(0,0,0,0.75)] mt-3 animate-fade-in [animation-fill-mode:both]">
+            {/* CONTAINER 2: Advanced Search Panel — same dark frosted treatment.
+                The 0fr → 1fr row animates the panel open, so any container that grows with it
+                (the Home hero and its object-cover background video) resizes smoothly instead
+                of snapping to a new height. */}
+            <div
+                className={`grid transition-[grid-template-rows,opacity,visibility] duration-500 ease-out ${
+                    showAdvanced ? 'grid-rows-[1fr] opacity-100 visible' : 'grid-rows-[0fr] opacity-0 invisible'
+                }`}
+            >
+                <div className="relative rounded-2xl overflow-hidden min-h-0 shadow-[0_24px_70px_-20px_rgba(0,0,0,0.75)] mt-3">
                     <div className={PANEL_BG} />
                     <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
 
@@ -311,7 +317,7 @@ const HeroSearch = ({ className = '', operationType }) => {
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };
