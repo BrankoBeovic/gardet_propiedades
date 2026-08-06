@@ -360,40 +360,43 @@ const Home = () => {
         <div className="min-h-screen">
             {/* Hero Section */}
             <div className="relative pt-20 overflow-hidden min-h-[88vh] sm:min-h-[820px] flex flex-col items-center justify-start bg-[#141414] z-10">
-                {/* Poster always paints first; video fades in when ready (or poster-only for reduced-motion / Save-Data) */}
-                <img
-                    src={HERO_POSTER}
-                    alt=""
-                    aria-hidden="true"
-                    fetchPriority="high"
-                    decoding="async"
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-                />
-                {!preferPosterOnly && (
-                    <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="metadata"
-                        poster={HERO_POSTER}
+                {/* Media pinned to hero viewport height so expanding search doesn't reframe/zoom the video */}
+                <div className="absolute inset-x-0 top-0 h-[88vh] sm:h-[820px] pointer-events-none overflow-hidden z-0">
+                    {/* Poster always paints first; video fades in when ready (or poster-only for reduced-motion / Save-Data) */}
+                    <img
+                        src={HERO_POSTER}
+                        alt=""
                         aria-hidden="true"
-                        onCanPlay={() => setHeroVideoReady(true)}
-                        onPlaying={() => setHeroVideoReady(true)}
-                        className={`absolute inset-0 w-full h-full object-cover pointer-events-none z-[1] transition-opacity duration-700 ease-out ${
-                            heroVideoReady ? 'opacity-100' : 'opacity-0'
-                        }`}
-                    >
-                        <source src={HERO_VIDEO_WEBM} type="video/webm" />
-                        <source src={HERO_VIDEO_1080} type="video/mp4" />
-                    </video>
-                )}
+                        fetchPriority="high"
+                        decoding="async"
+                        className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    {!preferPosterOnly && (
+                        <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            preload="metadata"
+                            poster={HERO_POSTER}
+                            aria-hidden="true"
+                            onCanPlay={() => setHeroVideoReady(true)}
+                            onPlaying={() => setHeroVideoReady(true)}
+                            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-out ${
+                                heroVideoReady ? 'opacity-100' : 'opacity-0'
+                            }`}
+                        >
+                            <source src={HERO_VIDEO_WEBM} type="video/webm" />
+                            <source src={HERO_VIDEO_1080} type="video/mp4" />
+                        </video>
+                    )}
 
-                {/* Top fade gradient for smooth navbar transition */}
-                <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#141414] via-[#141414]/70 to-transparent pointer-events-none z-10" />
+                    {/* Top fade gradient for smooth navbar transition */}
+                    <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#141414] via-[#141414]/70 to-transparent z-10" />
 
-                {/* Bottom fade gradient for smooth transition to next section */}
-                <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-transparent pointer-events-none z-10" />
+                    {/* Bottom fade gradient for smooth transition to next section */}
+                    <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#141414] via-[#141414]/70 to-transparent z-10" />
+                </div>
 
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 sm:pt-10 sm:pb-20 text-center z-20 w-full">
                     {/* Gold accent line */}
