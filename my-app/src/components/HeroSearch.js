@@ -15,9 +15,9 @@ const FIELD_CLASS =
     'hover:border-white/30 transition-all duration-300 ' +
     '[&>option]:bg-[#1C1C1E] [&>option]:text-ivory';
 
-// Opaque on mobile; frosted glass from sm up
+// Opaque on phone/tablet (incl. landscape); frosted glass from xl (desktop) up
 const PANEL_BG =
-    'absolute inset-0 rounded-2xl bg-[#1C1C1E] border border-white/20 sm:backdrop-blur-xl sm:bg-[#1C1C1E]/75';
+    'absolute inset-0 rounded-2xl bg-[#1C1C1E] border border-white/20 xl:backdrop-blur-xl xl:bg-[#1C1C1E]/75';
 
 /** Map route operationType to tipos_operacion id (Arriendo excludes temporada). */
 function resolveOperacionId(tiposOperacion, operationType) {
@@ -224,7 +224,7 @@ const HeroSearch = ({ className = '', operationType }) => {
             <div className="flex justify-end mt-2.5">
                 <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="inline-flex items-center gap-2 bg-[#1C1C1E] sm:backdrop-blur-xl sm:bg-[#1C1C1E]/75 border border-white/20 hover:border-gold/40 text-gold hover:text-gold-light px-4 py-2 rounded-xl transition-all duration-300 font-jakarta text-xs font-semibold tracking-wide group cursor-pointer"
+                    className="inline-flex items-center gap-2 bg-[#1C1C1E] xl:backdrop-blur-xl xl:bg-[#1C1C1E]/75 border border-white/20 hover:border-gold/40 text-gold hover:text-gold-light px-4 py-2 rounded-xl transition-all duration-300 font-jakarta text-xs font-semibold tracking-wide group cursor-pointer"
                 >
                     <SlidersHorizontal className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90 text-gold" />
                     <span>Búsqueda avanzada</span>
