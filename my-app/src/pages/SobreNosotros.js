@@ -112,7 +112,7 @@ const SobreNosotros = () => {
             <SectionHeader
                 label="Pasión"
                 title="Sobre Nosotros"
-                as="h1"
+                as="h1"  
                 className="text-center pt-24 lg:pt-32 pb-10 lg:pb-14 px-4 relative z-10"
             />
 
@@ -138,7 +138,7 @@ const SobreNosotros = () => {
                             </h2>
                             <div className={`h-px w-16 bg-gold/70 ${introVisible ? 'sn-line' : 'opacity-0'}`} style={{ '--sn-delay': 240 }} />
                             <p className={`font-jakarta text-[15px] sm:text-base text-[#4A4A4A] leading-[1.85] font-light ${introVisible ? 'sn-rise' : 'opacity-0'}`} style={{ '--sn-delay': 280 }}>
-                                En Gardet Propiedades, redefinimos la experiencia inmobiliaria de alto estándar. Somos una corredora y consultora especializada en la comercialización de viviendas exclusivas en los sectores más exclusivos de cada región de nuestro país.
+                                En Gardet Propiedades, redefinimos la experiencia inmobiliaria de alto estándar. Somos una corredora y consultora especializada en la comercialización de viviendas en los sectores más exclusivos de cada región de nuestro país.
                             </p>
                         </div>
                     </div>
@@ -179,7 +179,7 @@ const SobreNosotros = () => {
                         </div>
                         <div className="lg:col-span-8">
                             <p className={`font-jakarta text-[15px] sm:text-base lg:text-[17px] text-[#4A4A4A] leading-[1.9] font-light ${missionVisible ? 'sn-rise' : 'opacity-0'}`} style={{ '--sn-delay': 200 }}>
-                                El verdadero éxito en el sector inmobiliario boutique se basa en la experiencia, la confianza y las relaciones duraderas. Nuestra misión es atraer y desarrollar talento excepcional, impulsar la innovación constante y entregar un servicio de clase mundial, manteniéndonos siempre fieles a nuestro compromiso con la excelencia, la integridad y el trabajo en equipo.
+                                El verdadero éxito en el sector inmobiliario boutique se basa en la experiencia, la confianza y las relaciones duraderas. Impulsar la innovación constante y entregar un servicio de clase mundial, manteniéndonos siempre fieles a nuestro compromiso con la excelencia, la integridad y el trabajo en equipo.
                             </p>
                         </div>
                     </div>
