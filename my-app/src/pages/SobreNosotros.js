@@ -179,7 +179,7 @@ const SobreNosotros = () => {
                         </div>
                         <div className="lg:col-span-8">
                             <p className={`font-jakarta text-[15px] sm:text-base lg:text-[17px] text-[#4A4A4A] leading-[1.9] font-light ${missionVisible ? 'sn-rise' : 'opacity-0'}`} style={{ '--sn-delay': 200 }}>
-                                El verdadero éxito en el sector inmobiliario boutique se basa en la experiencia, la confianza y las relaciones duraderas. Impulsar la innovación constante y entregar un servicio de clase mundial, manteniéndonos siempre fieles a nuestro compromiso con la excelencia, la integridad y el trabajo en equipo.
+                                El verdadero éxito en el sector inmobiliario boutique se basa en la experiencia, la confianza y las relaciones duraderas. Nuestra idea es impulsar la innovación constante y entregar un servicio de clase mundial, manteniéndonos siempre fieles a nuestro compromiso con la excelencia, la integridad y el trabajo en equipo.
                             </p>
                         </div>
                     </div>
