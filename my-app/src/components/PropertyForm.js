@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchComunasByRegion } from '../lib/propertyHelpers';
@@ -92,6 +92,8 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
 
     const [images, setImages] = useState([]);
     const [lightboxUrl, setLightboxUrl] = useState(null);
+    const [dragIndex, setDragIndex] = useState(null);
+    const [dragOverIndex, setDragOverIndex] = useState(null);
 
     useEffect(() => {
         if (!lightboxUrl) return undefined;
@@ -179,7 +181,10 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 });
 
                 if (property.propiedades_imagenes) {
-                    setImages(property.propiedades_imagenes);
+                    const sorted = [...property.propiedades_imagenes].sort(
+                        (a, b) => (a.orden ?? 0) - (b.orden ?? 0)
+                    );
+                    setImages(sorted);
                 }
             }
         };
@@ -220,6 +225,7 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImages(prev => [...prev, {
+                    clientId: uuidv4(),
                     url: reader.result,
                     file,
                     mimeExt: result.ext,
@@ -236,7 +242,14 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
     };
 
     const handleRemoveImage = (index) => {
-        setImages(prev => prev.filter((_, i) => i !== index));
+        setImages(prev => {
+            const removed = prev[index];
+            const next = prev.filter((_, i) => i !== index);
+            if (removed?.es_portada && next.length > 0 && !next.some(img => img.es_portada)) {
+                return next.map((img, i) => (i === 0 ? { ...img, es_portada: true } : img));
+            }
+            return next;
+        });
     };
 
     const handleSetCover = (index) => {
@@ -244,6 +257,26 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
             ...img,
             es_portada: i === index
         })));
+    };
+
+    /** Reorders images immutably by moving fromIndex → toIndex. */
+    const handleReorderImage = (fromIndex, toIndex) => {
+        if (fromIndex === toIndex || fromIndex == null || toIndex == null) return;
+        setImages(prev => {
+            if (fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+                return prev;
+            }
+            const next = [...prev];
+            const [moved] = next.splice(fromIndex, 1);
+            next.splice(toIndex, 0, moved);
+            return next;
+        });
+    };
+
+    /** Moves an image one step up or down in the list. */
+    const handleMoveImage = (index, direction) => {
+        const toIndex = direction === 'up' ? index - 1 : index + 1;
+        handleReorderImage(index, toIndex);
     };
 
     const uploadImages = async (propiedadId) => {
@@ -623,6 +656,9 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
             {/* Image Upload */}
             <div>
                 <label className={labelClass}>Imágenes (JPEG, PNG o WebP · máx. 5 MB)</label>
+                <p className="mb-2 text-xs text-[#4A4A4A]/70 font-jakarta">
+                    Arrastrá las fotos o usá las flechas para definir el orden. La primera no es la portada salvo que la marques.
+                </p>
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border border-dashed border-[#2C2C2C]/20 rounded-lg hover:border-gold/50 bg-white/50 transition-colors cursor-pointer">
                     <div className="space-y-1 text-center">
                         <Upload className="mx-auto h-10 w-10 text-[#A1917B]/50" />
@@ -643,46 +679,133 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
 
                 {images.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {images.map((image, index) => (
-                            <div key={index} className="relative group rounded-lg overflow-hidden border border-[#2C2C2C]/10 bg-white">
-                                <button
-                                    type="button"
-                                    onClick={() => setLightboxUrl(image.url)}
-                                    className="block w-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-                                    aria-label={`Ver imagen ${index + 1} en grande`}
-                                >
-                                    <img
-                                        src={image.url}
-                                        alt={`Preview ${index}`}
-                                        className="h-28 w-full object-cover"
-                                    />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRemoveImage(index);
+                        {images.map((image, index) => {
+                            const imageKey = image.id ?? image.clientId ?? `img-${index}`;
+                            const isDragging = dragIndex === index;
+                            const isDragOver = dragOverIndex === index && dragIndex !== index;
+
+                            return (
+                                <div
+                                    key={imageKey}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        if (dragOverIndex !== index) setDragOverIndex(index);
                                     }}
-                                    className="absolute top-1.5 right-1.5 bg-red-500/90 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                    aria-label="Eliminar imagen"
-                                >
-                                    <X className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSetCover(index);
+                                    onDragLeave={() => {
+                                        if (dragOverIndex === index) setDragOverIndex(null);
                                     }}
-                                    className={`absolute bottom-1.5 left-1.5 px-2 py-0.5 text-xs font-jakarta rounded z-10 ${image.es_portada
-                                        ? 'bg-gold text-obsidian font-semibold'
-                                        : 'bg-[#2C2C2C]/70 text-white hover:bg-gold/80'
-                                        } transition-colors`}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        handleReorderImage(dragIndex, index);
+                                        setDragIndex(null);
+                                        setDragOverIndex(null);
+                                    }}
+                                    className={`relative group rounded-lg overflow-hidden border bg-white transition-opacity ${
+                                        isDragging
+                                            ? 'opacity-50 border-gold'
+                                            : isDragOver
+                                                ? 'border-gold ring-2 ring-gold/40'
+                                                : 'border-[#2C2C2C]/10'
+                                    }`}
                                 >
-                                    {image.es_portada ? 'Portada' : 'Marcar portada'}
-                                </button>
-                            </div>
-                        ))}
+                                    <span
+                                        className="absolute top-1.5 left-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded bg-[#2C2C2C]/80 px-1.5 text-[11px] font-jakarta font-semibold text-white"
+                                        aria-hidden="true"
+                                    >
+                                        {index + 1}
+                                    </span>
+
+                                    <div
+                                        draggable
+                                        onDragStart={(e) => {
+                                            e.dataTransfer.effectAllowed = 'move';
+                                            e.dataTransfer.setData('text/plain', String(index));
+                                            setDragIndex(index);
+                                        }}
+                                        onDragEnd={() => {
+                                            setDragIndex(null);
+                                            setDragOverIndex(null);
+                                        }}
+                                        className="absolute top-1.5 left-1/2 z-10 -translate-x-1/2 cursor-grab active:cursor-grabbing rounded bg-[#2C2C2C]/70 p-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+                                        aria-label={`Arrastrar imagen ${index + 1}`}
+                                        title="Arrastrar para reordenar"
+                                        role="button"
+                                        tabIndex={0}
+                                    >
+                                        <GripVertical className="h-3.5 w-3.5" />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setLightboxUrl(image.url)}
+                                        className="block w-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                                        aria-label={`Ver imagen ${index + 1} en grande`}
+                                    >
+                                        <img
+                                            src={image.url}
+                                            alt={`Preview ${index + 1}`}
+                                            className="h-28 w-full object-cover"
+                                            draggable={false}
+                                        />
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveImage(index);
+                                        }}
+                                        className="absolute top-1.5 right-1.5 bg-red-500/90 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                        aria-label="Eliminar imagen"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+
+                                    <div className="absolute top-1.5 right-9 z-10 flex flex-col gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleMoveImage(index, 'up');
+                                            }}
+                                            disabled={index === 0}
+                                            className="rounded bg-[#2C2C2C]/70 p-0.5 text-white hover:bg-gold/90 disabled:opacity-30 disabled:pointer-events-none"
+                                            aria-label={`Subir imagen ${index + 1}`}
+                                            title="Subir"
+                                        >
+                                            <ChevronUp className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleMoveImage(index, 'down');
+                                            }}
+                                            disabled={index === images.length - 1}
+                                            className="rounded bg-[#2C2C2C]/70 p-0.5 text-white hover:bg-gold/90 disabled:opacity-30 disabled:pointer-events-none"
+                                            aria-label={`Bajar imagen ${index + 1}`}
+                                            title="Bajar"
+                                        >
+                                            <ChevronDown className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSetCover(index);
+                                        }}
+                                        className={`absolute bottom-1.5 left-1.5 px-2 py-0.5 text-xs font-jakarta rounded z-10 ${image.es_portada
+                                            ? 'bg-gold text-obsidian font-semibold'
+                                            : 'bg-[#2C2C2C]/70 text-white hover:bg-gold/80'
+                                            } transition-colors`}
+                                    >
+                                        {image.es_portada ? 'Portada' : 'Marcar portada'}
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
