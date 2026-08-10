@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
 import HeroSearch from '../components/HeroSearch';
 import SectionHeader from '../components/SectionHeader';
-import { PROPERTY_LIST_SELECT } from '../lib/propertyHelpers';
+import { PROPERTY_LIST_SELECT, PUBLIC_ESTADOS } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const PropertiesPage = ({ operationType }) => {
@@ -95,7 +95,7 @@ const PropertiesPage = ({ operationType }) => {
                 let query = supabase
                     .from('propiedades')
                     .select(PROPERTY_LIST_SELECT)
-                    .eq('estado', 'publicada');
+                    .in('estado', PUBLIC_ESTADOS);
 
                 // Apply filters
                 if (operacionIds) {

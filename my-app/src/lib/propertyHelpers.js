@@ -73,6 +73,9 @@ export const PROPERTY_LIST_SELECT = `
   )
 `;
 
+/** Estados visible on the public site (excludes borrador). */
+export const PUBLIC_ESTADOS = ['publicada', 'vendida', 'arrendada'];
+
 const ESTADO_BADGE_CLASSES = {
   borrador: 'bg-[#2C2C2C]/8 text-[#4A4A4A] border-[#2C2C2C]/15',
   publicada: 'bg-green-50 text-green-700 border-green-200',
@@ -85,6 +88,14 @@ const ESTADO_BADGE_CLASSES = {
  */
 export function getEstadoBadgeClasses(estado) {
   return ESTADO_BADGE_CLASSES[estado] || ESTADO_BADGE_CLASSES.borrador;
+}
+
+/**
+ * Capitalized label for property estado (e.g. Vendida).
+ */
+export function formatEstadoLabel(estado) {
+  if (!estado) return '';
+  return estado.charAt(0).toUpperCase() + estado.slice(1);
 }
 
 /**
@@ -102,7 +113,7 @@ export async function fetchComunasByRegion(supabase, regionId) {
 }
 
 /**
- * Derives regiones and comunas that have at least one published property.
+ * Derives regiones and comunas that have at least one publicly listed property.
  * Used by HeroSearch so filters only show locations with results.
  * @returns {{ regiones: Array<{id: string|number, nombre: string}>, comunasByRegion: Record<string, Array<{id: string|number, nombre: string}>> }}
  */
@@ -121,7 +132,7 @@ export async function fetchPublishedLocationOptions(supabase) {
         )
       )
     `)
-    .eq('estado', 'publicada');
+    .in('estado', PUBLIC_ESTADOS);
 
   if (error) throw error;
 

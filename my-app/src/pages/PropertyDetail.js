@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { queueReturnScroll } from '../utils/scrollMemory';
 import { useAuth } from '../auth/AuthProvider';
-import { PROPERTY_DETAIL_SELECT, getEstadoBadgeClasses } from '../lib/propertyHelpers';
+import { PROPERTY_DETAIL_SELECT, PUBLIC_ESTADOS, getEstadoBadgeClasses, formatEstadoLabel } from '../lib/propertyHelpers';
 import { propertyInquiryWhatsApp } from '../constants/contact';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useUfValue } from '../hooks/useUfValue';
@@ -47,12 +47,12 @@ const PropertyDetail = () => {
         const fetchProperty = async () => {
             setFetchError(null);
             try {
-                // Public detail: only published listings (owners manage drafts in dashboard)
+                // Public detail: publicada / vendida / arrendada (drafts stay in dashboard)
                 const { data, error } = await supabase
                     .from('propiedades')
                     .select(PROPERTY_DETAIL_SELECT)
                     .eq('id', id)
-                    .eq('estado', 'publicada')
+                    .in('estado', PUBLIC_ESTADOS)
                     .single();
 
                 if (error) throw error;
@@ -142,7 +142,7 @@ const PropertyDetail = () => {
                 <div className="text-center">
                     <h2 className="title-editorial text-3xl text-ivory mb-3">Propiedad no encontrada</h2>
                     <p className="text-ivory/40 font-jakarta mb-6">
-                        La propiedad que buscas no existe, no está publicada o fue eliminada.
+                        La propiedad que buscas no existe, no está disponible públicamente o fue eliminada.
                     </p>
                     {fetchError && (
                         <p className="text-red-400/80 font-jakarta text-xs mb-4">{fetchError}</p>
@@ -217,7 +217,7 @@ const PropertyDetail = () => {
 
                             {/* Estado Badge */}
                             <div className={`absolute top-6 right-6 px-4 py-1.5 text-sm font-jakarta font-medium border shadow-lg z-10 rounded-full ${getEstadoBadgeClasses(property.estado)}`}>
-                                {property.estado?.charAt(0).toUpperCase() + property.estado?.slice(1)}
+                                {formatEstadoLabel(property.estado)}
                             </div>
 
                             {/* Image Navigation */}

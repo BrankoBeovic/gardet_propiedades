@@ -3,7 +3,8 @@
 --
 -- Ownership: update_property_location requires auth.uid() = property owner.
 -- get_property_with_location is callable by authenticated owners for any of
--- their properties, and by anon/authenticated only for estado = 'publicada'.
+-- their properties, and by anon/authenticated only for publicly listed estados
+-- (publicada, vendida, arrendada).
 
 -- Function to update property location (owner only)
 CREATE OR REPLACE FUNCTION update_property_location(
@@ -70,7 +71,7 @@ BEGIN
     FROM propiedades p
     WHERE p.id = property_id
       AND (
-        p.estado = 'publicada'
+        p.estado IN ('publicada', 'vendida', 'arrendada')
         OR (auth.uid() IS NOT NULL AND p.user_id = auth.uid())
       );
 END;

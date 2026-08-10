@@ -17,12 +17,12 @@
 ALTER TABLE public.propiedades ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.propiedades_imagenes ENABLE ROW LEVEL SECURITY;
 
--- Public can only read published properties
+-- Public can read published, sold, and rented properties (not drafts)
 DROP POLICY IF EXISTS "Public can read published properties" ON public.propiedades;
 CREATE POLICY "Public can read published properties"
   ON public.propiedades
   FOR SELECT
-  USING (estado = 'publicada');
+  USING (estado IN ('publicada', 'vendida', 'arrendada'));
 
 -- Owners can read their own (including drafts)
 DROP POLICY IF EXISTS "Owners can read own properties" ON public.propiedades;
@@ -54,7 +54,7 @@ CREATE POLICY "Owners can delete own properties"
   TO authenticated
   USING (auth.uid() = user_id);
 
--- Images: public read only when parent property is publicada
+-- Images: public read when parent property is publicly listed
 DROP POLICY IF EXISTS "Public can read images of published properties" ON public.propiedades_imagenes;
 CREATE POLICY "Public can read images of published properties"
   ON public.propiedades_imagenes
@@ -63,7 +63,7 @@ CREATE POLICY "Public can read images of published properties"
     EXISTS (
       SELECT 1 FROM public.propiedades p
       WHERE p.id = propiedades_imagenes.propiedad_id
-        AND p.estado = 'publicada'
+        AND p.estado IN ('publicada', 'vendida', 'arrendada')
     )
   );
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Maximize, Home } from 'lucide-react';
 import { rememberScrollForReturn } from '../utils/scrollMemory';
+import { getEstadoBadgeClasses, formatEstadoLabel } from '../lib/propertyHelpers';
 
 const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
     const {
@@ -14,8 +15,11 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
         direccion_referencial,
         propiedades_imagenes,
         tipos_propiedad,
-        tipos_operacion
+        tipos_operacion,
+        estado
     } = property;
+
+    const showEstadoBadge = estado === 'vendida' || estado === 'arrendada';
 
     // Get the cover image or a placeholder
     const coverImage = propiedades_imagenes?.find(img => img.es_portada)?.url ||
@@ -43,6 +47,13 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
                 {tipos_operacion && (
                     <span className="absolute top-4 left-4 bg-[#2C2C2C]/90 text-white text-xs font-bold px-3 py-1 uppercase tracking-wider rounded">
                         {tipos_operacion.nombre}
+                    </span>
+                )}
+
+                {/* Sold / rented status */}
+                {showEstadoBadge && (
+                    <span className={`absolute bottom-4 right-4 text-xs font-jakarta font-medium px-2.5 py-1 border rounded-full shadow-sm ${getEstadoBadgeClasses(estado)}`}>
+                        {formatEstadoLabel(estado)}
                     </span>
                 )}
 

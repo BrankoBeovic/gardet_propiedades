@@ -7,7 +7,7 @@ import SectionHeader from '../components/SectionHeader';
 import quieresVenderImg from '../assets/imagen_quieres_vender.webp';
 import louisImg from '../assets/Louis_home.webp';
 import { peekPendingScroll, restoreScrollY, shouldSkipHomeEntranceAnimations } from '../utils/scrollMemory';
-import { PROPERTY_CARD_SELECT } from '../lib/propertyHelpers';
+import { PROPERTY_CARD_SELECT, PUBLIC_ESTADOS } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const HERO_POSTER = '/media/hero-v1-poster.webp';
@@ -130,7 +130,7 @@ const Home = () => {
                 const { data, error } = await supabase
                     .from('propiedades')
                     .select(PROPERTY_CARD_SELECT)
-                    .eq('estado', 'publicada')
+                    .in('estado', PUBLIC_ESTADOS)
                     .limit(12);
 
                 if (error) throw error;
