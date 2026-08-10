@@ -27,9 +27,9 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
         null;
 
     return (
-        <div className="group rounded-xl overflow-hidden card-light shadow-lg shadow-black/20 transition-all duration-300">
+        <div className="group flex flex-col h-full rounded-xl overflow-hidden card-light shadow-lg shadow-black/20 transition-all duration-300">
             {/* Image Section */}
-            <div className="relative h-56 bg-[#EBE7E0] overflow-hidden">
+            <div className="relative h-56 flex-shrink-0 bg-[#EBE7E0] overflow-hidden">
                 {coverImage ? (
                     <img
                         src={coverImage}
@@ -74,7 +74,7 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
             </div>
 
             {/* Content Section */}
-            <div className="p-5 bg-[#F5F2EC]">
+            <div className="flex flex-col flex-1 p-5 bg-[#F5F2EC]">
                 {/* Title */}
                 <h3 className="font-jakarta font-bold text-[#2C2C2C] text-lg mb-2 line-clamp-2 leading-tight group-hover:text-[#7E6649] transition-colors duration-300 break-words">
                     {titulo}
@@ -111,7 +111,7 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
                     onMouseEnter={onButtonHover}
                     onMouseLeave={onButtonLeave}
                     onClick={rememberScrollForReturn}
-                    className="block w-full text-center border border-[#2C2C2C] text-[#2C2C2C] hover:bg-gold hover:text-obsidian hover:border-gold py-2.5 text-xs font-jakarta font-bold uppercase tracking-wider relative z-10 rounded-xl transition-colors duration-300"
+                    className="block w-full mt-auto text-center border border-[#2C2C2C] text-[#2C2C2C] hover:bg-gold hover:text-obsidian hover:border-gold py-2.5 text-xs font-jakarta font-bold uppercase tracking-wider relative z-10 rounded-xl transition-colors duration-300"
                 >
                     Ver Detalles
                 </Link>
