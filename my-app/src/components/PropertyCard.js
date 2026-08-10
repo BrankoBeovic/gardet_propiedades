@@ -75,13 +75,13 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
 
             {/* Content Section */}
             <div className="flex flex-col flex-1 p-5 bg-[#F5F2EC]">
-                {/* Title */}
-                <h3 className="font-jakarta font-bold text-[#2C2C2C] text-lg mb-2 line-clamp-2 leading-tight group-hover:text-[#7E6649] transition-colors duration-300 break-words">
+                {/* Title — fixed 2-line height so 1- and 2-line titles align across cards */}
+                <h3 className="font-jakarta font-bold text-[#2C2C2C] text-lg mb-2 line-clamp-2 min-h-[2.75rem] leading-tight group-hover:text-[#7E6649] transition-colors duration-300 break-words">
                     {titulo}
                 </h3>
 
-                {/* Address */}
-                <div className="flex items-start text-[#4A4A4A] mb-4 text-sm">
+                {/* Address — fixed 2-line height so the stats block stays aligned */}
+                <div className="flex items-start text-[#4A4A4A] mb-4 text-sm min-h-[2.5rem]">
                     <MapPin className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0 text-[#A1917B]" />
                     <span className="line-clamp-2 font-jakarta break-words">{direccion_referencial}</span>
                 </div>
