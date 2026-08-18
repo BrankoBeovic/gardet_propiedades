@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const DEFAULT_TITLE = 'GARDET Propiedades — Alta Gama';
+const DEFAULT_TITLE = 'GARDET';
 const DEFAULT_DESCRIPTION =
   'GARDET Propiedades — Corredora inmobiliaria de ultra lujo. Residencias de autor, penthouses y propiedades de inversión prime.';
 
@@ -10,7 +10,7 @@ const DEFAULT_DESCRIPTION =
 export function useDocumentMeta(title, description) {
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = title ? `${title} | GARDET Propiedades` : DEFAULT_TITLE;
+    document.title = title ? `${title} · GARDET` : DEFAULT_TITLE;
 
     const meta = document.querySelector('meta[name="description"]');
     const prevDescription = meta?.getAttribute('content') || '';
