@@ -3,24 +3,13 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
 import HeroSearch from '../components/HeroSearch';
+import HeroVideo from '../components/HeroVideo';
 import SectionHeader from '../components/SectionHeader';
 import quieresVenderImg from '../assets/imagen_quieres_vender.webp';
 import louisImg from '../assets/Louis_home.webp';
 import { peekPendingScroll, restoreScrollY, shouldSkipHomeEntranceAnimations } from '../utils/scrollMemory';
 import { PROPERTY_CARD_SELECT, PUBLIC_ESTADOS } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
-
-const HERO_POSTER = '/media/hero-v1-poster.webp';
-const HERO_VIDEO_1080 = '/media/hero-v1-1080.mp4';
-const HERO_VIDEO_WEBM = '/media/hero-v1-1080.webm';
-
-/** Prefer poster-only when the user wants less motion or Save-Data is on. */
-function shouldPreferHeroPosterOnly() {
-    if (typeof window === 'undefined') return false;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const saveData = Boolean(navigator.connection?.saveData);
-    return prefersReducedMotion || saveData;
-}
 
 const ABOUT_ESSENCE_LABEL = 'NUESTRA ESENCIA';
 const ABOUT_HEADLINE = 'SOMOS UNA CORREDORA BOUTIQUE ESPECIALIZADA EN LA COMERCIALIZACIÓN DE VIVIENDAS EXCLUSIVAS.';
@@ -48,8 +37,6 @@ const Home = () => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
     const [listError, setListError] = useState(null);
-    const [preferPosterOnly] = useState(() => shouldPreferHeroPosterOnly());
-    const [heroVideoReady, setHeroVideoReady] = useState(false);
 
     useDocumentMeta(null, 'GARDET Propiedades — Corredora inmobiliaria de ultra lujo en Santiago.');
 
@@ -362,34 +349,7 @@ const Home = () => {
             <div className="relative pt-20 overflow-hidden min-h-[88vh] sm:min-h-[820px] flex flex-col items-center justify-start bg-[#141414] z-10">
                 {/* Media stretches to the hero's real height, so it stays behind the search bar
                     and the advanced panel whenever that panel is expanded. */}
-                {/* Poster always paints first; video fades in when ready (or poster-only for reduced-motion / Save-Data) */}
-                <img
-                    src={HERO_POSTER}
-                    alt=""
-                    aria-hidden="true"
-                    fetchPriority="high"
-                    decoding="async"
-                    className="absolute inset-0 w-full h-full object-cover z-0"
-                />
-                {!preferPosterOnly && (
-                    <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="metadata"
-                        poster={HERO_POSTER}
-                        aria-hidden="true"
-                        onCanPlay={() => setHeroVideoReady(true)}
-                        onPlaying={() => setHeroVideoReady(true)}
-                        className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-700 ease-out ${
-                            heroVideoReady ? 'opacity-100' : 'opacity-0'
-                        }`}
-                    >
-                        <source src={HERO_VIDEO_WEBM} type="video/webm" />
-                        <source src={HERO_VIDEO_1080} type="video/mp4" />
-                    </video>
-                )}
+                <HeroVideo />
 
                 {/* Top fade gradient for smooth navbar transition */}
                 <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#141414] via-[#141414]/70 to-transparent pointer-events-none z-10" />
