@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import ImageGalleryEditor from './ImageGalleryEditor';
+import LocationMap from './LocationMap';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchComunasByRegion } from '../lib/propertyHelpers';
@@ -564,10 +565,19 @@ const PropertyForm = ({ property, onSave, onCancel }) => {
                 {fieldErrors.descripcion && <p className={fieldErrorClass}>{fieldErrors.descripcion}</p>}
             </div>
 
-            {/* Location Picker - Google Maps desactivado temporalmente */}
-            <div className="bg-white/70 border border-[#2C2C2C]/12 rounded-lg p-6 text-center">
-                <p className="text-[#4A4A4A] text-sm font-jakarta">Mapa de ubicación desactivado temporalmente</p>
-                <p className="text-[#4A4A4A]/60 text-xs font-jakarta mt-1">Ingresa la dirección manualmente en el campo de arriba</p>
+            {/* Map preview — the public detail page shows the same map, built from address + comuna */}
+            <div>
+                <label className={labelClass}>Ubicación en el mapa</label>
+                <p className="mb-2 text-xs text-[#4A4A4A]/70 font-jakarta">
+                    El mapa de la ficha se genera con la dirección y la comuna. Revisa que el punto quede bien ubicado.
+                </p>
+                <LocationMap
+                    address={formData.direccion_referencial}
+                    comuna={dropdownData.comunas.find((c) => String(c.id) === String(formData.comuna_id))?.nombre}
+                    title="Vista previa del mapa"
+                    className="h-[240px]"
+                    debounceMs={800}
+                />
             </div>
 
             <ImageGalleryEditor images={images} onChange={setImages} onError={setFormError} />

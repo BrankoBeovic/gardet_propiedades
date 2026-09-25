@@ -128,3 +128,23 @@ ALTER TABLE public.proyectos
   ADD COLUMN IF NOT EXISTS pie_antes_forma text NOT NULL DEFAULT 'Cuotas',
   ADD COLUMN IF NOT EXISTS pie_despues_cuotas integer NOT NULL DEFAULT 24,
   ADD COLUMN IF NOT EXISTS pie_despues_forma text NOT NULL DEFAULT 'Financiamiento externo';
+
+-- Condiciones comerciales (Excel "Condiciones 1.2"), migración `proyectos_condiciones_comerciales`.
+ALTER TABLE public.proyectos
+  ADD COLUMN IF NOT EXISTS plan_pago text,
+  ADD COLUMN IF NOT EXISTS secundarios text,
+  ADD COLUMN IF NOT EXISTS ranking integer,
+  ADD COLUMN IF NOT EXISTS ranking_comuna integer;
+
+-- Notas para brokers (comisiones, cuentas, checklists): nunca públicas, solo el dueño con sesión.
+CREATE TABLE IF NOT EXISTS public.proyectos_notas_internas (
+  proyecto_id bigint PRIMARY KEY REFERENCES public.proyectos(id) ON DELETE CASCADE,
+  descuentos_promos text,
+  notas text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.proyectos_notas_internas ENABLE ROW LEVEL SECURITY;
+-- Policies SELECT/INSERT/UPDATE/DELETE para authenticated vía EXISTS sobre proyectos.user_id = auth.uid()
+-- (mismo patrón que proyectos_unidades, sin policy pública).
+
+CREATE INDEX IF NOT EXISTS proyectos_ranking_idx ON public.proyectos(ranking, ranking_comuna);

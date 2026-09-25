@@ -10,6 +10,7 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
         titulo,
         precio_uf,
         mt2_construidos,
+        mt2_terreno,
         habitaciones,
         banos,
         direccion_referencial,
@@ -100,8 +101,10 @@ const PropertyCard = ({ property, onButtonHover, onButtonLeave }) => {
                     </div>
                     <div className="flex flex-col items-center">
                         <Maximize className="h-4 w-4 text-[#A1917B] mb-1" />
-                        <span className="text-sm font-semibold text-[#2C2C2C] font-jakarta">{mt2_construidos}</span>
-                        <span className="text-xs text-[#4A4A4A]/70 font-jakarta">m²</span>
+                        <span className="text-sm font-semibold text-[#2C2C2C] font-jakarta">
+                            {(mt2_construidos ?? mt2_terreno)?.toLocaleString('es-CL') ?? '—'}
+                        </span>
+                        <span className="text-xs text-[#4A4A4A]/70 font-jakarta">{mt2_construidos == null && mt2_terreno != null ? 'm² terreno' : 'm²'}</span>
                     </div>
                 </div>
 

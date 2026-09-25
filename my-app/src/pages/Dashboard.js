@@ -14,7 +14,8 @@ import ProyectoForm from '../components/ProyectoForm';
 const PROYECTO_DASHBOARD_SELECT = `
   *,
   proyectos_imagenes (url, es_portada, orden),
-  proyectos_unidades (*)
+  proyectos_unidades (*),
+  proyectos_notas_internas (descuentos_promos, notas)
 `;
 
 const Dashboard = () => {

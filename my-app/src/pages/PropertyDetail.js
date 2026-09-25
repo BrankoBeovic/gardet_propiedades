@@ -24,6 +24,7 @@ import { propertyInquiryWhatsApp } from '../constants/contact';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useUfValue } from '../hooks/useUfValue';
 import { formatClp } from '../services/ufService';
+import LocationMap from '../components/LocationMap';
 
 const PropertyDetail = () => {
     const { id } = useParams();
@@ -335,8 +336,8 @@ const PropertyDetail = () => {
                                     {[
                                         { icon: Bed, value: property.habitaciones, label: 'Dormitorios' },
                                         { icon: Bath, value: property.banos, label: 'Baños' },
-                                        { icon: Maximize, value: property.mt2_construidos, label: 'm² Construidos' },
-                                        { icon: LandPlot, value: property.mt2_terreno || '-', label: 'm² Terreno' },
+                                        { icon: Maximize, value: property.mt2_construidos?.toLocaleString('es-CL') ?? '-', label: 'm² Construidos' },
+                                        { icon: LandPlot, value: property.mt2_terreno?.toLocaleString('es-CL') ?? '-', label: 'm² Terreno' },
                                     ].map(({ icon: Icon, value, label }, idx) => (
                                         <div key={idx} className="bg-white/80 border border-[#2C2C2C]/10 rounded-lg p-4 text-center hover:border-[#A1917B]/40 transition-colors">
                                             <Icon className="h-6 w-6 text-[#A1917B] mx-auto mb-2" />
@@ -367,13 +368,12 @@ const PropertyDetail = () => {
                                         Ubicación
                                     </h3>
 
-                                    <div className="h-[250px] bg-[#EBE7E0] rounded-lg flex items-center justify-center border border-[#2C2C2C]/10">
-                                        <div className="text-center text-[#4A4A4A]/70">
-                                            <MapPin className="h-10 w-10 mx-auto mb-2 text-[#A1917B]/60" />
-                                            <p className="font-jakarta text-sm font-medium text-[#2C2C2C]">Mapa no disponible</p>
-                                            <p className="text-xs mt-1">Próximamente</p>
-                                        </div>
-                                    </div>
+                                    <LocationMap
+                                        address={property.direccion_referencial}
+                                        comuna={property.comunas?.nombre}
+                                        title={`Mapa de ${property.titulo}`}
+                                        className="h-[250px]"
+                                    />
 
                                     {/* Address Details */}
                                     <div className="mt-4 p-4 bg-[#F5F2EC] rounded-lg border border-[#2C2C2C]/10">

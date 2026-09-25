@@ -23,7 +23,8 @@ export const PROYECTO_CARD_SELECT = `
   proyectos_unidades (
     id,
     tipologia,
-    precio_final_uf,
+    precio_lista_uf,
+    m2_total,
     disponible
   ),
   comunas (

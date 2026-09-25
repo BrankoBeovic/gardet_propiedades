@@ -38,6 +38,7 @@ import { projectInquiryWhatsApp } from '../constants/contact';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useUfValue } from '../hooks/useUfValue';
 import { formatClp } from '../services/ufService';
+import LocationMap from '../components/LocationMap';
 
 const UNIDADES_VISIBLES = 8;
 
@@ -304,12 +305,6 @@ const ProyectoDetail = () => {
 
     const currentImage = images[activeImage]?.url || null;
     const ubicacionTexto = [proyecto.direccion, proyecto.comunas?.nombre].filter(Boolean).join(', ');
-    const mapQuery =
-        proyecto.lat != null && proyecto.lng != null
-            ? `${proyecto.lat},${proyecto.lng}`
-            : ubicacionTexto
-                ? `${ubicacionTexto}, Chile`
-                : null;
     const toClp = (uf) =>
         typeof ufValor === 'number' && !Number.isNaN(ufValor) && uf ? formatClp(Math.round(uf * ufValor)) : null;
 
@@ -318,11 +313,13 @@ const ProyectoDetail = () => {
     const amenidades = AMENIDADES.filter((a) => proyecto[a.key]);
     const beneficios = [
         proyecto.bono_pie_max > 0 && { label: 'Bono pie', value: `Hasta ${formatPct(proyecto.bono_pie_max)}` },
-        proyecto.pie_en_cuotas && { label: 'Pie en cuotas', value: 'Disponible' },
-        proyecto.financiamiento_pie && { label: 'Financiamiento del pie', value: proyecto.financiamiento_pie },
-        proyecto.arriendo_garantizado && { label: 'Arriendo garantizado', value: proyecto.arriendo_garantizado },
-        proyecto.otros_beneficios && { label: 'Otros beneficios', value: proyecto.otros_beneficios },
         proyecto.reserva_clp > 0 && { label: 'Reserva', value: formatClp(proyecto.reserva_clp) },
+        proyecto.plan_pago && { label: 'Pie y plan de pago', value: proyecto.plan_pago, wide: true },
+        proyecto.financiamiento_pie && { label: 'Financiamiento', value: proyecto.financiamiento_pie, wide: true },
+        proyecto.arriendo_garantizado && { label: 'Arriendo garantizado', value: proyecto.arriendo_garantizado },
+        proyecto.renta_corta && { label: 'Renta corta (Airbnb)', value: 'Permitida' },
+        proyecto.secundarios && { label: 'Estacionamiento y bodega', value: proyecto.secundarios },
+        proyecto.otros_beneficios && { label: 'Otros beneficios', value: proyecto.otros_beneficios },
     ].filter(Boolean);
 
     const unidadLabel = selectedUnit ? `${selectedUnit.numero ? `depto ${selectedUnit.numero}` : ''} ${selectedUnit.tipologia}`.trim() : '';
@@ -674,12 +671,12 @@ const ProyectoDetail = () => {
                             <div className="lg:col-span-2 lg:row-start-2 space-y-8 min-w-0">
                                 {beneficios.length > 0 && (
                                     <div className="border-t border-[#2C2C2C]/10 pt-8">
-                                        <SectionTitle icon={Gift}>Beneficios</SectionTitle>
+                                        <SectionTitle icon={Gift}>Condiciones comerciales</SectionTitle>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             {beneficios.map((b) => (
-                                                <div key={b.label} className="bg-white/80 border border-[#2C2C2C]/10 rounded-lg p-4">
+                                                <div key={b.label} className={`bg-white/80 border border-[#2C2C2C]/10 rounded-lg p-4 ${b.wide ? 'sm:col-span-2' : ''}`}>
                                                     <div className="text-[10px] text-[#A1917B] font-jakarta font-semibold uppercase tracking-[3px] mb-1">{b.label}</div>
-                                                    <div className="text-sm font-jakarta font-semibold text-[#2C2C2C] break-words">{b.value}</div>
+                                                    <div className={`text-sm font-jakarta text-[#2C2C2C] break-words ${b.wide ? 'leading-relaxed' : 'font-semibold'}`}>{b.value}</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -726,19 +723,13 @@ const ProyectoDetail = () => {
                                 <div className="border-t border-[#2C2C2C]/10 pt-8">
                                     <SectionTitle icon={Map}>Ubicación</SectionTitle>
                                     <div className="bg-white/80 rounded-xl p-3 border border-[#2C2C2C]/10">
-                                        {mapQuery ? (
-                                            <iframe
-                                                title={`Mapa de ${proyecto.nombre}`}
-                                                src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`}
-                                                className="w-full h-[280px] sm:h-[340px] rounded-lg border-0"
-                                                loading="lazy"
-                                                referrerPolicy="no-referrer-when-downgrade"
-                                            />
-                                        ) : (
-                                            <div className="h-[250px] bg-[#EBE7E0] rounded-lg flex items-center justify-center">
-                                                <p className="font-jakarta text-sm text-[#4A4A4A]/70">Mapa no disponible</p>
-                                            </div>
-                                        )}
+                                        <LocationMap
+                                            lat={proyecto.lat}
+                                            lng={proyecto.lng}
+                                            address={proyecto.direccion}
+                                            comuna={proyecto.comunas?.nombre}
+                                            title={`Mapa de ${proyecto.nombre}`}
+                                        />
                                         {ubicacionTexto && (
                                             <div className="flex items-start gap-3 p-3 pt-4">
                                                 <MapPin className="h-4 w-4 text-[#A1917B] mt-0.5 flex-shrink-0" />

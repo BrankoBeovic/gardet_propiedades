@@ -64,7 +64,9 @@ const ProyectosPage = () => {
                     .from('proyectos')
                     .select(PROYECTO_CARD_SELECT)
                     .in('estado', PUBLIC_ESTADOS_PROYECTO)
-                    .order('puntaje', { ascending: false, nullsFirst: false });
+                    .order('ranking', { ascending: true, nullsFirst: false })
+                    .order('ranking_comuna', { ascending: true, nullsFirst: false })
+                    .order('nombre');
                 if (fetchError) throw fetchError;
                 setProyectos(data || []);
             } catch (err) {

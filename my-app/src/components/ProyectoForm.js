@@ -7,6 +7,7 @@ import { fetchComunasByRegion } from '../lib/propertyHelpers';
 import { storagePathFromPublicUrl, validateImageFile } from '../lib/imageUpload';
 import { AMENIDADES, formatUf, parseTipologia } from '../lib/proyectoHelpers';
 import ImageGalleryEditor from './ImageGalleryEditor';
+import LocationMap from './LocationMap';
 
 const STORAGE_BUCKET = 'propiedades';
 
@@ -98,7 +99,7 @@ function validateProyectoForm(formData, unidades) {
         if (!formData[field]?.trim()) errors[field] = 'Indica la forma de pago';
     });
 
-    ['pisos', 'ascensores', 'reserva_clp'].forEach((field) => {
+    ['pisos', 'ascensores', 'reserva_clp', 'ranking', 'ranking_comuna'].forEach((field) => {
         if (formData[field] === '') return;
         const n = toNumber(formData[field]);
         if (n === null || n < 0 || !Number.isInteger(n)) errors[field] = 'Ingresa un número entero válido';
@@ -152,6 +153,12 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
         financiamiento_pie: '',
         arriendo_garantizado: '',
         otros_beneficios: '',
+        plan_pago: '',
+        secundarios: '',
+        ranking: '',
+        ranking_comuna: '',
+        descuentos_promos: '',
+        notas_internas: '',
         ...PAYMENT_PLAN_DEFAULTS,
         ...Object.fromEntries(AMENIDADES.map((a) => [a.key, false])),
     }));
@@ -181,6 +188,10 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                 const { data } = await supabase.from('comunas').select('region_id').eq('id', proyecto.comuna_id).single();
                 regionId = data?.region_id ?? '';
             }
+            // One-to-one embed: PostgREST may return an object or a single-item array
+            const notasInternas = Array.isArray(proyecto.proyectos_notas_internas)
+                ? proyecto.proyectos_notas_internas[0]
+                : proyecto.proyectos_notas_internas;
             setFormData({
                 nombre: proyecto.nombre || '',
                 inmobiliaria: proyecto.inmobiliaria || '',
@@ -200,6 +211,12 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                 financiamiento_pie: proyecto.financiamiento_pie || '',
                 arriendo_garantizado: proyecto.arriendo_garantizado || '',
                 otros_beneficios: proyecto.otros_beneficios || '',
+                plan_pago: proyecto.plan_pago || '',
+                secundarios: proyecto.secundarios || '',
+                ranking: proyecto.ranking ?? '',
+                ranking_comuna: proyecto.ranking_comuna ?? '',
+                descuentos_promos: notasInternas?.descuentos_promos || '',
+                notas_internas: notasInternas?.notas || '',
                 pie_pct: fractionToPct(proyecto.pie_pct ?? 0.2),
                 abono_pct: fractionToPct(proyecto.abono_pct ?? 0.01),
                 abono_forma: proyecto.abono_forma || PAYMENT_PLAN_DEFAULTS.abono_forma,
@@ -354,6 +371,10 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                 financiamiento_pie: formData.financiamiento_pie.trim() || null,
                 arriendo_garantizado: formData.arriendo_garantizado.trim() || null,
                 otros_beneficios: formData.otros_beneficios.trim() || null,
+                plan_pago: formData.plan_pago.trim() || null,
+                secundarios: formData.secundarios.trim() || null,
+                ranking: toNumber(formData.ranking),
+                ranking_comuna: toNumber(formData.ranking_comuna),
                 pie_pct: pctToFraction(formData.pie_pct),
                 abono_pct: pctToFraction(formData.abono_pct),
                 abono_forma: formData.abono_forma.trim(),
@@ -388,6 +409,14 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
             }
 
             await saveUnidades(proyectoId);
+
+            const { error: notasError } = await supabase.from('proyectos_notas_internas').upsert({
+                proyecto_id: proyectoId,
+                descuentos_promos: formData.descuentos_promos.trim() || null,
+                notas: formData.notas_internas.trim() || null,
+                updated_at: new Date().toISOString(),
+            });
+            if (notasError) throw notasError;
 
             const imageRows = await uploadImages(proyectoId);
             if (proyecto) {
@@ -508,6 +537,21 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                     {textField('ascensores', 'Ascensores', { type: 'number', min: 0 })}
                 </div>
                 <div className="mt-5">
+                    <label className={labelClass}>Ubicación en el mapa</label>
+                    <p className="mb-2 text-xs text-[#4A4A4A]/70 font-jakarta">
+                        Se usan la latitud y longitud si las ingresas; si no, la dirección y la comuna.
+                    </p>
+                    <LocationMap
+                        lat={formData.lat}
+                        lng={formData.lng}
+                        address={formData.direccion}
+                        comuna={comunas.find((c) => String(c.id) === String(formData.comuna_id))?.nombre}
+                        title="Vista previa del mapa"
+                        className="h-[240px]"
+                        debounceMs={800}
+                    />
+                </div>
+                <div className="mt-5">
                     <label className={labelClass} htmlFor="proyecto-descripcion">Descripción</label>
                     <textarea
                         id="proyecto-descripcion"
@@ -526,7 +570,7 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     {textField('bono_pie_max', 'Bono pie máx. (%)', { type: 'number', step: '0.1', min: 0, max: 100 })}
                     {textField('reserva_clp', 'Reserva (CLP)', { type: 'number', min: 0 })}
-                    {textField('financiamiento_pie', 'Financiamiento del pie', { type: 'text' })}
+                    {textField('financiamiento_pie', 'Financiamiento', { type: 'text' })}
                     {textField('arriendo_garantizado', 'Arriendo garantizado', { type: 'text' })}
                     {textField('otros_beneficios', 'Otros beneficios', { type: 'text' })}
                     <label className="flex items-center gap-2.5 md:pt-7 cursor-pointer">
@@ -539,6 +583,52 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                         />
                         <span className="text-sm font-jakarta text-[#2C2C2C]">Pie en cuotas</span>
                     </label>
+                    {textField('secundarios', 'Estacionamiento y bodega', { type: 'text' })}
+                    {textField('ranking', 'Ranking top 20', { type: 'number', min: 1, placeholder: 'Vacío si no está' })}
+                    {textField('ranking_comuna', 'Ranking en su comuna', { type: 'number', min: 1, placeholder: 'Vacío si no está' })}
+                </div>
+                <div className="mt-5">
+                    <label className={labelClass} htmlFor="proyecto-plan_pago">Pie y plan de pago</label>
+                    <textarea
+                        id="proyecto-plan_pago"
+                        name="plan_pago"
+                        value={formData.plan_pago}
+                        onChange={handleChange}
+                        rows={3}
+                        className="input-light resize-y"
+                    />
+                </div>
+            </section>
+
+            {/* Internal notes (never public) */}
+            <section className="rounded-xl border border-dashed border-[#A1917B]/50 bg-white/40 p-5">
+                <p className={`${sectionTitleClass} mb-1`}>Notas internas</p>
+                <p className="text-xs font-jakarta text-[#4A4A4A]/70 mb-4">
+                    Solo visibles en el Dashboard. No se muestran en la web pública (comisiones, cuentas, instrucciones para brokers).
+                </p>
+                <div className="space-y-5">
+                    <div>
+                        <label className={labelClass} htmlFor="proyecto-descuentos_promos">Descuentos y promociones</label>
+                        <textarea
+                            id="proyecto-descuentos_promos"
+                            name="descuentos_promos"
+                            value={formData.descuentos_promos}
+                            onChange={handleChange}
+                            rows={5}
+                            className="input-light resize-y"
+                        />
+                    </div>
+                    <div>
+                        <label className={labelClass} htmlFor="proyecto-notas_internas">Otras notas</label>
+                        <textarea
+                            id="proyecto-notas_internas"
+                            name="notas_internas"
+                            value={formData.notas_internas}
+                            onChange={handleChange}
+                            rows={3}
+                            className="input-light resize-y"
+                        />
+                    </div>
                 </div>
             </section>
 
