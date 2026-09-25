@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import ProyectoCard from '../components/ProyectoCard';
+import Pagination from '../components/Pagination';
+import { useUrlPagination, withParam } from '../hooks/useUrlPagination';
 import SectionHeader from '../components/SectionHeader';
 import {
     PROYECTO_CARD_SELECT,
@@ -28,6 +30,40 @@ const ENTREGA_OPCIONES = [
     { value: 'futura', label: 'Futura' },
 ];
 
+const PAGE_SIZE = 12;
+
+const ORDEN_OPCIONES = [
+    { value: '', label: 'Recomendados' },
+    { value: 'precio-asc', label: 'Precio: menor a mayor' },
+    { value: 'precio-desc', label: 'Precio: mayor a menor' },
+    { value: 'descuento', label: 'Mayor descuento' },
+    { value: 'unidades', label: 'Más unidades disponibles' },
+    { value: 'nombre', label: 'Nombre (A-Z)' },
+];
+
+/** Lowest available list price, falling back to the stored "desde". */
+const precioDesde = (p) => availableUnits(p.proyectos_unidades)[0]?.precio_lista_uf ?? p.precio_desde_uf ?? Infinity;
+
+/** Ranking order: top 20 first, then per-comuna position, then name. */
+const byRanking = (a, b) =>
+    (a.ranking ?? Infinity) - (b.ranking ?? Infinity) ||
+    (a.ranking_comuna ?? Infinity) - (b.ranking_comuna ?? Infinity) ||
+    a.nombre.localeCompare(b.nombre, 'es');
+
+const SORTERS = {
+    '': byRanking,
+    'precio-asc': (a, b) => precioDesde(a) - precioDesde(b),
+    'precio-desc': (a, b) => {
+        const pa = precioDesde(a);
+        const pb = precioDesde(b);
+        // Projects without price go last in both directions
+        return (pb === Infinity ? -Infinity : pb) - (pa === Infinity ? -Infinity : pa);
+    },
+    descuento: (a, b) => (b.dscto_max || 0) - (a.dscto_max || 0) || byRanking(a, b),
+    unidades: (a, b) => availableUnits(b.proyectos_unidades).length - availableUnits(a.proyectos_unidades).length,
+    nombre: (a, b) => a.nombre.localeCompare(b.nombre, 'es'),
+};
+
 const FilterSelect = ({ label, value, onChange, children }) => (
     <div className="relative">
         <label className={LABEL_CLASS}>{label}</label>
@@ -49,10 +85,11 @@ const ProyectosPage = () => {
     const comunaFiltro = searchParams.get('comuna') || '';
     const entregaFiltro = searchParams.get('entrega') || '';
     const tipologiaFiltro = searchParams.get('tipologia') || '';
+    const orden = SORTERS[searchParams.get('orden')] ? searchParams.get('orden') : '';
 
     useDocumentMeta(
         'Proyectos de inversión',
-        'Proyectos inmobiliarios seleccionados para invertir: precios, descuentos, cap rate y beneficios — GARDET Propiedades'
+        'Proyectos inmobiliarios seleccionados para invertir: precios, unidades disponibles, beneficios y condiciones de pago — GARDET Propiedades'
     );
 
     useEffect(() => {
@@ -112,12 +149,13 @@ const ProyectosPage = () => {
         [proyectos, comunaFiltro, entregaFiltro, tipologiaFiltro]
     );
 
-    const setFilter = (key, value) => {
-        const next = new URLSearchParams(searchParams);
-        if (value) next.set(key, value);
-        else next.delete(key);
-        setSearchParams(next, { replace: true });
-    };
+    const sorted = useMemo(() => [...filtered].sort(SORTERS[orden]), [filtered, orden]);
+
+    const { page: pagina, totalPages, visible: visibles, goToPage, gridRef, rangeStart, rangeEnd } =
+        useUrlPagination(sorted, PAGE_SIZE);
+
+    // Any filter or sort change goes back to page 1
+    const setFilter = (key, value) => setSearchParams(withParam(searchParams, key, value), { replace: true });
 
     const hasFilters = Boolean(comunaFiltro || entregaFiltro || tipologiaFiltro);
 
@@ -127,17 +165,17 @@ const ProyectosPage = () => {
                 <div className="text-center mb-8">
                     <SectionHeader label="INVERSIÓN" title="Proyectos de inversión" as="h1" />
                     <p className="mt-4 text-ivory/50 font-jakarta text-sm max-w-2xl mx-auto">
-                        Proyectos seleccionados por su precio, descuentos y rentabilidad estimada.
-                        Elige una unidad y revisa el pie, el dividendo y el arriendo estimado.
+                        Proyectos seleccionados por su precio, beneficios y condiciones de pago.
+                        Elige una unidad y revisa el detalle del pago.
                     </p>
                 </div>
 
                 {/* Filters */}
-                <div className="w-full max-w-4xl mx-auto mb-12">
+                <div className="w-full max-w-5xl mx-auto mb-12">
                     <div className="relative rounded-2xl overflow-hidden shadow-[0_24px_70px_-20px_rgba(0,0,0,0.75)]">
                         <div className="absolute inset-0 rounded-2xl backdrop-blur-xl bg-[#1C1C1E]/75 border border-white/20" />
                         <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
-                        <div className="relative p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                        <div className="relative p-3.5 sm:p-4 grid grid-cols-2 lg:grid-cols-4 gap-3 items-end">
                             <FilterSelect label="Comuna" value={comunaFiltro} onChange={(v) => setFilter('comuna', v)}>
                                 <option value="">Todas</option>
                                 {comunas.map((c) => (
@@ -155,18 +193,30 @@ const ProyectosPage = () => {
                                     <option key={t} value={t}>{t}</option>
                                 ))}
                             </FilterSelect>
+                            <FilterSelect label="Ordenar por" value={orden} onChange={(v) => setFilter('orden', v)}>
+                                {ORDEN_OPCIONES.map((o) => (
+                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                ))}
+                            </FilterSelect>
                         </div>
                     </div>
-                    {hasFilters && !loading && (
+                    {!loading && sorted.length > 0 && (
                         <p className="mt-4 text-center text-ivory/40 font-jakarta text-sm">
-                            {filtered.length} {filtered.length === 1 ? 'proyecto encontrado' : 'proyectos encontrados'} ·{' '}
-                            <button
-                                type="button"
-                                onClick={() => setSearchParams({}, { replace: true })}
-                                className="text-gold/80 hover:text-gold underline underline-offset-2"
-                            >
-                                Limpiar filtros
-                            </button>
+                            {sorted.length > PAGE_SIZE
+                                ? `Mostrando ${rangeStart}–${rangeEnd} de ${sorted.length} proyectos`
+                                : `${sorted.length} ${sorted.length === 1 ? 'proyecto' : 'proyectos'}`}
+                            {hasFilters && (
+                                <>
+                                    {' · '}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchParams(orden ? { orden } : {}, { replace: true })}
+                                        className="text-gold/80 hover:text-gold underline underline-offset-2"
+                                    >
+                                        Limpiar filtros
+                                    </button>
+                                </>
+                            )}
                         </p>
                     )}
                 </div>
@@ -182,18 +232,22 @@ const ProyectosPage = () => {
                             {error}
                         </p>
                     </div>
-                ) : filtered.length === 0 ? (
+                ) : sorted.length === 0 ? (
                     <div className="text-center py-16">
                         <p className="text-ivory/40 font-jakarta text-lg">
                             No hay proyectos disponibles {hasFilters ? 'con los filtros seleccionados' : ''} por el momento.
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filtered.map((proyecto) => (
-                            <ProyectoCard key={proyecto.id} proyecto={proyecto} />
-                        ))}
-                    </div>
+                    <>
+                        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {visibles.map((proyecto) => (
+                                <ProyectoCard key={proyecto.id} proyecto={proyecto} />
+                            ))}
+                        </div>
+
+                        <Pagination page={pagina} totalPages={totalPages} onChange={goToPage} label="Paginación de proyectos" />
+                    </>
                 )}
             </div>
         </div>

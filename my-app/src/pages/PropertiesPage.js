@@ -1,37 +1,78 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import PropertyCard from '../components/PropertyCard';
 import HeroSearch from '../components/HeroSearch';
 import SectionHeader from '../components/SectionHeader';
+import Pagination from '../components/Pagination';
 import { PROPERTY_LIST_SELECT, PUBLIC_ESTADOS } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { useUrlPagination, withParam } from '../hooks/useUrlPagination';
+
+const PAGE_SIZE = 12;
+
+const ORDEN_OPCIONES = [
+    { value: '', label: 'Recomendados' },
+    { value: 'recientes', label: 'Más recientes' },
+    { value: 'precio-asc', label: 'Precio: menor a mayor' },
+    { value: 'precio-desc', label: 'Precio: mayor a menor' },
+    { value: 'superficie', label: 'Mayor superficie' },
+];
+
+const byRecent = (a, b) => new Date(b.created_at) - new Date(a.created_at);
+const precio = (p) => (p.precio_uf == null ? null : Number(p.precio_uf));
+const superficie = (p) => Number(p.mt2_construidos ?? p.mt2_terreno) || 0;
+
+/** Missing prices go last in both directions. */
+const byPrecio = (dir) => (a, b) => {
+    const pa = precio(a);
+    const pb = precio(b);
+    if (pa == null || pb == null) return (pa == null) - (pb == null);
+    return dir * (pa - pb);
+};
+
+const SORTERS = {
+    // Available listings first (sold/rented still show), newest first
+    '': (a, b) => (a.estado !== 'publicada') - (b.estado !== 'publicada') || byRecent(a, b),
+    recientes: byRecent,
+    'precio-asc': byPrecio(1),
+    'precio-desc': byPrecio(-1),
+    superficie: (a, b) => superficie(b) - superficie(a),
+};
+
+const SORT_SELECT_CLASS =
+    'bg-[#141416] border border-white/15 rounded-xl pl-3 pr-9 py-2 text-ivory font-jakarta text-sm ' +
+    'appearance-none cursor-pointer focus:outline-none focus:border-gold/55 focus:ring-1 focus:ring-gold/25 ' +
+    'hover:border-white/30 transition-all duration-300 [&>option]:bg-[#1C1C1E] [&>option]:text-ivory';
 
 const PropertiesPage = ({ operationType }) => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [title, setTitle] = useState('');
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const pageTitle = title || (operationType ? `Propiedades en ${operationType}` : 'Resultados de Búsqueda');
     useDocumentMeta(pageTitle, `Catálogo de propiedades ${operationType || 'en venta y arriendo'} — GARDET Propiedades`);
+
+    // Filters from query params. `orden` and `pagina` are applied client-side,
+    // so changing them does not refetch.
+    const qOperacion = searchParams.get('operacion');
+    const qTipo = searchParams.get('tipo');
+    const qRegion = searchParams.get('region');
+    const qComuna = searchParams.get('comuna');
+    const qPrecioDesde = searchParams.get('precioDesde');
+    const qPrecioHasta = searchParams.get('precioHasta');
+    const qDormitorios = searchParams.get('dormitorios');
+    const qBanos = searchParams.get('banos');
+    const orden = SORTERS[searchParams.get('orden')] ? searchParams.get('orden') : '';
 
     useEffect(() => {
         const fetchProperties = async () => {
             setLoading(true);
             setError(null);
             try {
-                // Read filters from query params
-                const qOperacion = searchParams.get('operacion');
-                const qTipo = searchParams.get('tipo');
-                const qRegion = searchParams.get('region');
-                const qComuna = searchParams.get('comuna');
-                const qPrecioDesde = searchParams.get('precioDesde');
-                const qPrecioHasta = searchParams.get('precioHasta');
-                const qDormitorios = searchParams.get('dormitorios');
-                const qBanos = searchParams.get('banos');
-
                 // If coming from legacy route with operationType prop
                 let operacionId = qOperacion || null;
                 let operacionIds = null;
@@ -154,18 +195,21 @@ const PropertiesPage = ({ operationType }) => {
         };
 
         fetchProperties();
-    }, [operationType, searchParams]);
+    }, [operationType, qOperacion, qTipo, qRegion, qComuna, qPrecioDesde, qPrecioHasta, qDormitorios, qBanos]);
+
+    const sorted = useMemo(() => [...properties].sort(SORTERS[orden]), [properties, orden]);
+    const { page, totalPages, visible, goToPage, gridRef, rangeStart, rangeEnd } = useUrlPagination(sorted, PAGE_SIZE);
 
     // Count active filters for display
     const activeFilterCount = [
-        searchParams.get('operacion'),
-        searchParams.get('tipo'),
-        searchParams.get('region'),
-        searchParams.get('comuna'),
-        searchParams.get('precioDesde'),
-        searchParams.get('precioHasta'),
-        searchParams.get('dormitorios'),
-        searchParams.get('banos'),
+        qOperacion,
+        qTipo,
+        qRegion,
+        qComuna,
+        qPrecioDesde,
+        qPrecioHasta,
+        qDormitorios,
+        qBanos,
     ].filter(Boolean).length;
 
     return (
@@ -186,9 +230,37 @@ const PropertiesPage = ({ operationType }) => {
                 </div>
 
                 {/* Filter search bar */}
-                <div className="mb-12">
+                <div className="mb-10">
                     <HeroSearch className="mt-0" operationType={operationType} />
                 </div>
+
+                {/* Results toolbar: count + sort (kept out of the hero search on purpose) */}
+                {!loading && !error && properties.length > 0 && (
+                    <div className="max-w-5xl mx-auto mb-8 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <p className="text-ivory/50 font-jakarta text-sm text-center sm:text-left">
+                            {sorted.length > PAGE_SIZE
+                                ? `Mostrando ${rangeStart}–${rangeEnd} de ${sorted.length} propiedades`
+                                : `${sorted.length} ${sorted.length === 1 ? 'propiedad' : 'propiedades'}`}
+                        </p>
+                        <label className="flex items-center justify-center gap-3">
+                            <span className="text-gold text-[10px] font-jakarta font-semibold uppercase tracking-widest whitespace-nowrap">
+                                Ordenar por
+                            </span>
+                            <span className="relative">
+                                <select
+                                    value={orden}
+                                    onChange={(e) => setSearchParams(withParam(searchParams, 'orden', e.target.value), { replace: true })}
+                                    className={SORT_SELECT_CLASS}
+                                >
+                                    {ORDEN_OPCIONES.map((o) => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gold/60 pointer-events-none" />
+                            </span>
+                        </label>
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="text-center py-16">
@@ -208,11 +280,14 @@ const PropertiesPage = ({ operationType }) => {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {properties.map((property) => (
-                            <PropertyCard key={property.id} property={property} />
-                        ))}
-                    </div>
+                    <>
+                        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {visible.map((property) => (
+                                <PropertyCard key={property.id} property={property} />
+                            ))}
+                        </div>
+                        <Pagination page={page} totalPages={totalPages} onChange={goToPage} label="Paginación de propiedades" />
+                    </>
                 )}
             </div>
         </div>
