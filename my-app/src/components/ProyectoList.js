@@ -49,7 +49,7 @@ const ProyectoList = ({ proyectos, onEdit, onDelete, loading }) => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-jakarta text-[#7E6649] font-semibold">
-                                        {formatUf(disponibles[0]?.precio_final_uf ?? proyecto.precio_desde_uf)}
+                                        {formatUf(disponibles[0]?.precio_lista_uf ?? proyecto.precio_desde_uf)}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-jakarta text-[#2C2C2C]">

@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../auth/AuthProvider';
-import { useUfValue } from '../hooks/useUfValue';
 import { fetchComunasByRegion } from '../lib/propertyHelpers';
 import { storagePathFromPublicUrl, validateImageFile } from '../lib/imageUpload';
 import { AMENIDADES, formatUf, parseTipologia } from '../lib/proyectoHelpers';
@@ -56,7 +55,6 @@ function unitFromRow(row) {
         precio_lista_uf: row.precio_lista_uf ?? '',
         dscto: fractionToPct(row.dscto),
         arriendo_clp: row.arriendo_clp ?? '',
-        cap_rate: row.cap_rate,
         disponible: row.disponible !== false,
     };
 }
@@ -68,13 +66,16 @@ function precioFinal(unit) {
     return round2(lista * (1 - (pctToFraction(unit.dscto) || 0)));
 }
 
-/** Annual rent / price. Needs the UF value in CLP; falls back to the stored cap rate. */
-function capRate(unit, ufValor) {
-    const final = precioFinal(unit);
-    const arriendo = toNumber(unit.arriendo_clp);
-    if (final && arriendo && ufValor) return Math.round(((arriendo * 12) / (final * ufValor)) * 10000) / 10000;
-    return unit.cap_rate ?? null;
-}
+const PAYMENT_PLAN_DEFAULTS = {
+    pie_pct: '20',
+    abono_pct: '1',
+    abono_forma: 'Transferencia al contado',
+    pie_antes_pct: '5',
+    pie_antes_cuotas: '25',
+    pie_antes_forma: 'Cuotas',
+    pie_despues_cuotas: '24',
+    pie_despues_forma: 'Financiamiento externo',
+};
 
 function validateProyectoForm(formData, unidades) {
     const errors = {};
@@ -82,11 +83,19 @@ function validateProyectoForm(formData, unidades) {
     if (!formData.region_id) errors.region_id = 'Selecciona una región';
     if (!formData.comuna_id) errors.comuna_id = 'Selecciona una comuna';
 
-    const pctFields = ['bono_pie_max', 'cap_rate'];
-    pctFields.forEach((field) => {
-        if (formData[field] === '') return;
+    ['bono_pie_max', 'pie_pct', 'abono_pct', 'pie_antes_pct'].forEach((field) => {
+        if (formData[field] === '' && field === 'bono_pie_max') return;
         const n = toNumber(formData[field]);
         if (n === null || n < 0 || n > 100) errors[field] = 'Ingresa un porcentaje entre 0 y 100';
+    });
+
+    ['pie_antes_cuotas', 'pie_despues_cuotas'].forEach((field) => {
+        const n = toNumber(formData[field]);
+        if (n === null || n < 1 || !Number.isInteger(n)) errors[field] = 'Ingresa al menos 1 cuota';
+    });
+
+    ['abono_forma', 'pie_antes_forma', 'pie_despues_forma'].forEach((field) => {
+        if (!formData[field]?.trim()) errors[field] = 'Indica la forma de pago';
     });
 
     ['pisos', 'ascensores', 'reserva_clp'].forEach((field) => {
@@ -117,7 +126,6 @@ function validateProyectoForm(formData, unidades) {
 
 const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
     const { user } = useAuth();
-    const { valor: ufValor } = useUfValue();
     const [loading, setLoading] = useState(false);
     const [formError, setFormError] = useState(null);
     const [fieldErrors, setFieldErrors] = useState({});
@@ -144,8 +152,7 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
         financiamiento_pie: '',
         arriendo_garantizado: '',
         otros_beneficios: '',
-        cap_rate: '',
-        puntaje: '',
+        ...PAYMENT_PLAN_DEFAULTS,
         ...Object.fromEntries(AMENIDADES.map((a) => [a.key, false])),
     }));
 
@@ -193,8 +200,14 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                 financiamiento_pie: proyecto.financiamiento_pie || '',
                 arriendo_garantizado: proyecto.arriendo_garantizado || '',
                 otros_beneficios: proyecto.otros_beneficios || '',
-                cap_rate: fractionToPct(proyecto.cap_rate),
-                puntaje: proyecto.puntaje ?? '',
+                pie_pct: fractionToPct(proyecto.pie_pct ?? 0.2),
+                abono_pct: fractionToPct(proyecto.abono_pct ?? 0.01),
+                abono_forma: proyecto.abono_forma || PAYMENT_PLAN_DEFAULTS.abono_forma,
+                pie_antes_pct: fractionToPct(proyecto.pie_antes_pct ?? 0.05),
+                pie_antes_cuotas: String(proyecto.pie_antes_cuotas ?? PAYMENT_PLAN_DEFAULTS.pie_antes_cuotas),
+                pie_antes_forma: proyecto.pie_antes_forma || PAYMENT_PLAN_DEFAULTS.pie_antes_forma,
+                pie_despues_cuotas: String(proyecto.pie_despues_cuotas ?? PAYMENT_PLAN_DEFAULTS.pie_despues_cuotas),
+                pie_despues_forma: proyecto.pie_despues_forma || PAYMENT_PLAN_DEFAULTS.pie_despues_forma,
                 ...Object.fromEntries(AMENIDADES.map((a) => [a.key, Boolean(proyecto[a.key])])),
             });
             setImages([...(proyecto.proyectos_imagenes || [])].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)));
@@ -209,11 +222,11 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
 
     const resumenUnidades = useMemo(() => {
         const disponibles = unidades.filter((u) => u.disponible);
-        const finales = disponibles.map(precioFinal).filter((n) => n !== null);
+        const listas = disponibles.map((u) => toNumber(u.precio_lista_uf)).filter((n) => n !== null);
         const dsctos = disponibles.map((u) => pctToFraction(u.dscto) || 0);
         return {
             disponibles: disponibles.length,
-            desde: finales.length ? Math.min(...finales) : null,
+            desde: listas.length ? Math.min(...listas) : null,
             dsctoMax: dsctos.length ? Math.max(...dsctos) : null,
         };
     }, [unidades]);
@@ -280,7 +293,6 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                 dscto: pctToFraction(u.dscto) || 0,
                 precio_final_uf: precioFinal(u),
                 arriendo_clp: toNumber(u.arriendo_clp),
-                cap_rate: capRate(u, ufValor),
                 disponible: u.disponible,
             };
         };
@@ -324,14 +336,6 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
 
         setLoading(true);
         try {
-            const capRates = unidades
-                .filter((u) => u.disponible)
-                .map((u) => capRate(u, ufValor))
-                .filter((n) => n !== null);
-            const capRatePromedio = capRates.length
-                ? Math.round((capRates.reduce((a, b) => a + b, 0) / capRates.length) * 10000) / 10000
-                : null;
-
             const proyectoData = {
                 nombre: formData.nombre.trim(),
                 inmobiliaria: formData.inmobiliaria.trim() || null,
@@ -350,8 +354,14 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                 financiamiento_pie: formData.financiamiento_pie.trim() || null,
                 arriendo_garantizado: formData.arriendo_garantizado.trim() || null,
                 otros_beneficios: formData.otros_beneficios.trim() || null,
-                cap_rate: formData.cap_rate === '' ? capRatePromedio : pctToFraction(formData.cap_rate),
-                puntaje: toNumber(formData.puntaje),
+                pie_pct: pctToFraction(formData.pie_pct),
+                abono_pct: pctToFraction(formData.abono_pct),
+                abono_forma: formData.abono_forma.trim(),
+                pie_antes_pct: pctToFraction(formData.pie_antes_pct),
+                pie_antes_cuotas: toNumber(formData.pie_antes_cuotas),
+                pie_antes_forma: formData.pie_antes_forma.trim(),
+                pie_despues_cuotas: toNumber(formData.pie_despues_cuotas),
+                pie_despues_forma: formData.pie_despues_forma.trim(),
                 precio_desde_uf: resumenUnidades.desde,
                 dscto_max: resumenUnidades.dsctoMax,
                 updated_at: new Date().toISOString(),
@@ -516,13 +526,9 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     {textField('bono_pie_max', 'Bono pie máx. (%)', { type: 'number', step: '0.1', min: 0, max: 100 })}
                     {textField('reserva_clp', 'Reserva (CLP)', { type: 'number', min: 0 })}
-                    {textField('puntaje', 'Puntaje', { type: 'number', step: '0.1' })}
                     {textField('financiamiento_pie', 'Financiamiento del pie', { type: 'text' })}
                     {textField('arriendo_garantizado', 'Arriendo garantizado', { type: 'text' })}
                     {textField('otros_beneficios', 'Otros beneficios', { type: 'text' })}
-                    <div>
-                        {textField('cap_rate', 'Cap rate promedio (%)', { type: 'number', step: '0.01', placeholder: 'Se calcula si lo dejas vacío' })}
-                    </div>
                     <label className="flex items-center gap-2.5 md:pt-7 cursor-pointer">
                         <input
                             type="checkbox"
@@ -533,6 +539,26 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                         />
                         <span className="text-sm font-jakarta text-[#2C2C2C]">Pie en cuotas</span>
                     </label>
+                </div>
+            </section>
+
+            {/* Payment plan */}
+            <section>
+                <p className={`${sectionTitleClass} mb-1`}>Detalle del pago</p>
+                <p className="text-xs font-jakarta text-[#4A4A4A]/70 mb-4">
+                    Porcentajes sobre el precio de lista. El bono pie se descuenta del pie total; el saldo se paga con el abono,
+                    el pie antes de entrega y el pie después de entrega (este último es lo que resta).
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {textField('pie_pct', 'Pie total (%)', { type: 'number', step: '0.1', min: 0, max: 100 })}
+                    {textField('abono_pct', 'Abono (%)', { type: 'number', step: '0.1', min: 0, max: 100 })}
+                    {textField('abono_forma', 'Forma de pago del abono', { type: 'text' })}
+                    {textField('pie_antes_pct', 'Pie antes de entrega (%)', { type: 'number', step: '0.1', min: 0, max: 100 })}
+                    {textField('pie_antes_cuotas', 'Cuotas antes de entrega', { type: 'number', min: 1 })}
+                    {textField('pie_antes_forma', 'Forma de pago antes de entrega', { type: 'text' })}
+                    <div className="hidden md:block" />
+                    {textField('pie_despues_cuotas', 'Cuotas después de entrega', { type: 'number', min: 1 })}
+                    {textField('pie_despues_forma', 'Forma de pago después de entrega', { type: 'text' })}
                 </div>
             </section>
 
@@ -567,7 +593,7 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                         <p className="text-xs font-jakarta text-[#4A4A4A]/70">
                             {resumenUnidades.disponibles} disponibles
                             {resumenUnidades.desde !== null && ` · desde ${formatUf(resumenUnidades.desde, { decimals: true })}`}
-                            {' · '}El precio final y el cap rate se calculan solos.
+                            {' · '}El descuento solo se usa para el &quot;Hasta X% dcto.&quot; de la card.
                         </p>
                     </div>
                     <button
@@ -591,15 +617,13 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                         <table className="min-w-[980px] w-full text-sm font-jakarta">
                             <thead className="sticky top-0 bg-[#F5F2EC] z-10">
                                 <tr className="text-[10px] text-[#A1917B] uppercase tracking-[2px]">
-                                    {['Depto', 'Tipología', 'Orient.', 'm² total', 'm² pond.', 'Lista UF', 'Dcto %', 'Final UF', 'Arriendo CLP', 'Cap rate', 'Disp.', ''].map((h) => (
+                                    {['Depto', 'Tipología', 'Orient.', 'm² total', 'm² pond.', 'Lista UF', 'Dcto %', 'Arriendo CLP', 'Disp.', ''].map((h) => (
                                         <th key={h} className="text-left font-semibold px-2 py-2.5 whitespace-nowrap">{h}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
                                 {unidades.map((u, i) => {
-                                    const final = precioFinal(u);
-                                    const cap = capRate(u, ufValor);
                                     return (
                                         <tr key={u.clientId} className={`border-t border-[#2C2C2C]/5 ${u.disponible ? '' : 'opacity-50'}`}>
                                             <td className="px-2 py-1.5 w-20"><input className={unitInputClass} value={u.numero} onChange={(e) => updateUnit(i, 'numero', e.target.value)} aria-label="Número de depto" /></td>
@@ -609,9 +633,7 @@ const ProyectoForm = ({ proyecto, onSave, onCancel }) => {
                                             <td className="px-2 py-1.5 w-20"><input type="number" step="0.01" className={unitInputClass} value={u.m2_ponderado} onChange={(e) => updateUnit(i, 'm2_ponderado', e.target.value)} aria-label="m² ponderado" /></td>
                                             <td className="px-2 py-1.5 w-24"><input type="number" step="0.01" className={unitInputClass} value={u.precio_lista_uf} onChange={(e) => updateUnit(i, 'precio_lista_uf', e.target.value)} aria-label="Precio lista UF" /></td>
                                             <td className="px-2 py-1.5 w-20"><input type="number" step="0.1" className={unitInputClass} value={u.dscto} onChange={(e) => updateUnit(i, 'dscto', e.target.value)} aria-label="Descuento %" /></td>
-                                            <td className="px-2 py-1.5 whitespace-nowrap font-semibold text-[#2C2C2C]">{final !== null ? formatUf(final, { decimals: true }) : '—'}</td>
                                             <td className="px-2 py-1.5 w-28"><input type="number" step="1000" className={unitInputClass} value={u.arriendo_clp} onChange={(e) => updateUnit(i, 'arriendo_clp', e.target.value)} aria-label="Arriendo estimado CLP" /></td>
-                                            <td className="px-2 py-1.5 whitespace-nowrap text-[#4A4A4A]">{cap !== null ? `${(cap * 100).toFixed(1)}%` : '—'}</td>
                                             <td className="px-2 py-1.5 text-center">
                                                 <input type="checkbox" checked={u.disponible} onChange={(e) => updateUnit(i, 'disponible', e.target.checked)} className="h-4 w-4 accent-[#C5A262]" aria-label="Disponible" />
                                             </td>

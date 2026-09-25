@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Building2, LayoutGrid, TrendingUp, KeyRound } from 'lucide-react';
+import { MapPin, Building2, LayoutGrid, Maximize, KeyRound } from 'lucide-react';
 import { rememberScrollForReturn } from '../utils/scrollMemory';
 import {
     availableUnits,
@@ -8,6 +8,7 @@ import {
     formatPct,
     formatUf,
     getCoverImage,
+    m2Range,
     uniqueTipologias,
 } from '../lib/proyectoHelpers';
 
@@ -21,7 +22,6 @@ const ProyectoCard = ({ proyecto, onButtonHover, onButtonLeave }) => {
         entrega,
         precio_desde_uf,
         dscto_max,
-        cap_rate,
         estado,
         proyectos_imagenes,
         proyectos_unidades,
@@ -30,7 +30,8 @@ const ProyectoCard = ({ proyecto, onButtonHover, onButtonLeave }) => {
     const coverImage = getCoverImage(proyectos_imagenes);
     const unidades = availableUnits(proyectos_unidades);
     const tipologias = uniqueTipologias(unidades);
-    const desde = unidades[0]?.precio_final_uf ?? precio_desde_uf;
+    const desde = unidades[0]?.precio_lista_uf ?? precio_desde_uf;
+    const superficie = m2Range(unidades);
     const agotado = estado === 'agotado' || unidades.length === 0;
 
     return (
@@ -110,9 +111,9 @@ const ProyectoCard = ({ proyecto, onButtonHover, onButtonLeave }) => {
                         <span className="text-xs text-[#4A4A4A]/70 font-jakarta">Unidades</span>
                     </div>
                     <div className="flex flex-col items-center px-1">
-                        <TrendingUp className="h-4 w-4 text-[#A1917B] mb-1" />
-                        <span className="text-sm font-semibold text-[#2C2C2C] font-jakarta">{formatPct(cap_rate, 1)}</span>
-                        <span className="text-xs text-[#4A4A4A]/70 font-jakarta">Cap rate</span>
+                        <Maximize className="h-4 w-4 text-[#A1917B] mb-1" />
+                        <span className="text-sm font-semibold text-[#2C2C2C] font-jakarta whitespace-nowrap">{superficie || '—'}</span>
+                        <span className="text-xs text-[#4A4A4A]/70 font-jakarta">m²</span>
                     </div>
                 </div>
 

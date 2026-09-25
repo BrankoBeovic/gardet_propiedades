@@ -78,13 +78,6 @@ export const AMENIDADES = [
   { key: 'eco_friendly', label: 'Eco-friendly', icon: Leaf },
 ];
 
-/** Pie options offered in the investment summary. */
-export const PIE_OPCIONES = [0.1, 0.15, 0.2];
-
-/** Reference mortgage assumptions (dividendo referencial sin seguros). */
-export const TASA_HIPOTECARIA_ANUAL = 0.045;
-export const PLAZO_HIPOTECARIO_ANOS = 25;
-
 const ufFormatter = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
 const ufFormatterDecimals = new Intl.NumberFormat('es-CL', {
   minimumFractionDigits: 2,
@@ -131,11 +124,20 @@ export function uniqueTipologias(unidades) {
   });
 }
 
-/** Available units, cheapest first. */
+/** Available units, cheapest list price first. */
 export function availableUnits(unidades) {
   return (unidades || [])
     .filter((u) => u.disponible !== false)
-    .sort((a, b) => Number(a.precio_final_uf) - Number(b.precio_final_uf));
+    .sort((a, b) => Number(a.precio_lista_uf) - Number(b.precio_lista_uf));
+}
+
+/** "38–71" m² range of the given units, or null. */
+export function m2Range(unidades) {
+  const values = (unidades || []).map((u) => Number(u.m2_total)).filter((n) => n > 0);
+  if (!values.length) return null;
+  const min = Math.floor(Math.min(...values));
+  const max = Math.ceil(Math.max(...values));
+  return min === max ? `${min}` : `${min}–${max}`;
 }
 
 /** Cover image URL (es_portada → first by orden → null). */
@@ -152,38 +154,35 @@ export function formatEntrega(entrega) {
   return `Entrega ${entrega}`;
 }
 
-/**
- * Monthly mortgage payment in UF (French amortization), without insurance.
- */
-export function calcDividendoUf(
-  montoCreditoUf,
-  tasaAnual = TASA_HIPOTECARIA_ANUAL,
-  anos = PLAZO_HIPOTECARIO_ANOS
-) {
-  const monto = Number(montoCreditoUf);
-  if (!monto || monto <= 0) return 0;
-  const r = tasaAnual / 12;
-  const n = anos * 12;
-  return (monto * r) / (1 - Math.pow(1 + r, -n));
-}
+const roundPct = (n) => Math.round(n * 1e6) / 1e6;
 
 /**
- * Investment summary for a unit given the chosen pie %.
- * Bono pie is paid by the developer, so the buyer's out-of-pocket pie is pie − bono.
+ * Payment breakdown ("Detalle del pago") for a unit, using the project's payment plan.
+ * Percentages are fractions of the list price. The developer's contribution (bono pie)
+ * covers part of the pie; the remaining pie is split into abono, pie antes de entrega and
+ * pie después de entrega (the remainder).
  */
-export function calcResumenInversion(unidad, piePct, bonoPieMax = 0) {
-  const precio = Number(unidad?.precio_final_uf) || 0;
-  const bonoPct = Math.min(Number(bonoPieMax) || 0, piePct);
-  const pieTotalUf = precio * piePct;
-  const bonoPieUf = precio * bonoPct;
-  const pieAPagarUf = Math.max(0, pieTotalUf - bonoPieUf);
-  const creditoUf = precio - pieTotalUf;
+export function calcDetallePago(unidad, proyecto) {
+  const precio = Number(unidad?.precio_lista_uf) || 0;
+  const piePct = Number(proyecto?.pie_pct ?? 0.2);
+  const aportePct = Math.min(Number(proyecto?.bono_pie_max) || 0, piePct);
+  const saldoPct = roundPct(piePct - aportePct);
+  const abonoPct = Math.min(Number(proyecto?.abono_pct ?? 0.01), saldoPct);
+  const antesPct = Math.min(Number(proyecto?.pie_antes_pct ?? 0.05), roundPct(saldoPct - abonoPct));
+  const despuesPct = roundPct(saldoPct - abonoPct - antesPct);
+  const creditoPct = roundPct(1 - piePct);
+
+  const uf = (pct) => precio * pct;
   return {
     precio,
-    pieTotalUf,
-    bonoPieUf,
-    pieAPagarUf,
-    creditoUf,
-    dividendoUf: calcDividendoUf(creditoUf),
+    pie: { pct: piePct, uf: uf(piePct) },
+    aporte: { pct: aportePct, uf: uf(aportePct) },
+    saldo: { pct: saldoPct, uf: uf(saldoPct) },
+    abono: { pct: abonoPct, uf: uf(abonoPct), cuotas: 1 },
+    antes: { pct: antesPct, uf: uf(antesPct), cuotas: Number(proyecto?.pie_antes_cuotas) || 1 },
+    despues: { pct: despuesPct, uf: uf(despuesPct), cuotas: Number(proyecto?.pie_despues_cuotas) || 1 },
+    credito: { pct: creditoPct, uf: uf(creditoPct) },
+    total: { pct: 1, uf: precio },
+    saldoTotal: { uf: uf(roundPct(1 - aportePct)) },
   };
 }

@@ -116,3 +116,15 @@ BEGIN
     $f$, t);
   END LOOP;
 END $$;
+
+-- Plan de pago ("Detalle del pago"), migración `proyectos_plan_de_pago`.
+-- El pie después de entrega no se guarda: es el saldo del pie menos abono y pie antes de entrega.
+ALTER TABLE public.proyectos
+  ADD COLUMN IF NOT EXISTS pie_pct numeric NOT NULL DEFAULT 0.2,
+  ADD COLUMN IF NOT EXISTS abono_pct numeric NOT NULL DEFAULT 0.01,
+  ADD COLUMN IF NOT EXISTS abono_forma text NOT NULL DEFAULT 'Transferencia al contado',
+  ADD COLUMN IF NOT EXISTS pie_antes_pct numeric NOT NULL DEFAULT 0.05,
+  ADD COLUMN IF NOT EXISTS pie_antes_cuotas integer NOT NULL DEFAULT 25,
+  ADD COLUMN IF NOT EXISTS pie_antes_forma text NOT NULL DEFAULT 'Cuotas',
+  ADD COLUMN IF NOT EXISTS pie_despues_cuotas integer NOT NULL DEFAULT 24,
+  ADD COLUMN IF NOT EXISTS pie_despues_forma text NOT NULL DEFAULT 'Financiamiento externo';

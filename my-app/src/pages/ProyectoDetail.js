@@ -11,26 +11,23 @@ import {
     MessageCircle,
     X,
     CalendarCheck,
-    BadgePercent,
-    TrendingUp,
     KeyRound,
     Gift,
     Layers,
+    LayoutGrid,
     ArrowUpDown,
-    Star,
     Tag,
     Sparkles,
+    Receipt,
+    Info,
 } from 'lucide-react';
 import { queueReturnScroll } from '../utils/scrollMemory';
 import {
     AMENIDADES,
-    PIE_OPCIONES,
-    PLAZO_HIPOTECARIO_ANOS,
     PROYECTO_DETAIL_SELECT,
     PUBLIC_ESTADOS_PROYECTO,
-    TASA_HIPOTECARIA_ANUAL,
     availableUnits,
-    calcResumenInversion,
+    calcDetallePago,
     formatEntrega,
     formatPct,
     formatTipologia,
@@ -51,17 +48,130 @@ const SectionTitle = ({ icon: Icon, children }) => (
     </h3>
 );
 
-const SummaryRow = ({ label, value, sub, strong, negative }) => (
+const SummaryRow = ({ label, value, sub, strong }) => (
     <div className="flex items-start justify-between gap-4 py-2.5 border-b border-[#2C2C2C]/10 last:border-b-0">
         <span className={`font-jakarta text-sm ${strong ? 'text-[#2C2C2C] font-semibold' : 'text-[#4A4A4A]'}`}>{label}</span>
         <span className="text-right">
-            <span className={`block font-jakarta text-sm ${strong ? 'font-bold text-[#2C2C2C]' : 'font-semibold text-[#2C2C2C]'} ${negative ? 'text-green-700' : ''}`}>
-                {value}
-            </span>
+            <span className={`block font-jakarta text-sm ${strong ? 'font-bold' : 'font-semibold'} text-[#2C2C2C]`}>{value}</span>
             {sub && <span className="block text-[11px] text-[#4A4A4A]/70 font-jakarta">{sub}</span>}
         </span>
     </div>
 );
+
+const InfoHint = ({ text }) => (
+    <span className="inline-flex align-middle ml-1 text-[#A1917B] cursor-help" title={text}>
+        <Info className="h-3.5 w-3.5" aria-hidden="true" />
+        <span className="sr-only">{text}</span>
+    </span>
+);
+
+/** "Detalle del pago" table for the selected unit. */
+const DetallePago = ({ detalle, proyecto, toClp }) => {
+    const clp = (uf) => toClp(uf) || '—';
+    const cuotaClp = (uf, cuotas) => {
+        const total = toClp(uf / cuotas);
+        return total ? `${cuotas} ${cuotas === 1 ? 'cuota' : 'cuotas'} de ${total}` : `${cuotas} ${cuotas === 1 ? 'cuota' : 'cuotas'}`;
+    };
+
+    const darkRow = 'bg-[#2C2C2C] text-ivory';
+    const lightRow = 'bg-white/80 text-[#2C2C2C] border-b border-[#2C2C2C]/10';
+    const numCell = 'px-3 py-3 text-right whitespace-nowrap';
+
+    const rows = [
+        { key: 'pie', item: 'Pie total', dark: true, ...detalle.pie },
+        detalle.aporte.pct > 0 && {
+            key: 'aporte',
+            item: 'Aporte inmobiliaria',
+            indent: true,
+            forma: (
+                <>
+                    <span className="font-semibold">Aporte inmobiliaria</span>
+                    <span className="block text-[11px] text-[#4A4A4A]/70">(Aplica al total de la inversión)</span>
+                </>
+            ),
+            ...detalle.aporte,
+        },
+        { key: 'saldo', item: 'Saldo pie a pagar', ...detalle.saldo },
+        detalle.abono.pct > 0 && {
+            key: 'abono',
+            item: 'Abono',
+            indent: true,
+            forma: (
+                <>
+                    <span className="font-semibold">{proyecto.abono_forma}</span> / {cuotaClp(detalle.abono.uf, 1)}
+                </>
+            ),
+            ...detalle.abono,
+        },
+        detalle.antes.pct > 0 && {
+            key: 'antes',
+            item: (
+                <>
+                    Pie antes de entrega
+                    <InfoHint text="Cuotas que pagarás antes de firmar la escritura." />
+                </>
+            ),
+            indent: true,
+            forma: (
+                <>
+                    <span className="font-semibold">{proyecto.pie_antes_forma}</span> / {cuotaClp(detalle.antes.uf, detalle.antes.cuotas)}
+                </>
+            ),
+            ...detalle.antes,
+        },
+        detalle.despues.pct > 0 && {
+            key: 'despues',
+            item: (
+                <>
+                    Pie después de entrega
+                    <InfoHint text="Cuotas que pagarás luego de firmar la escritura." />
+                </>
+            ),
+            indent: true,
+            forma: (
+                <>
+                    <span className="font-semibold">{proyecto.pie_despues_forma}</span> / {cuotaClp(detalle.despues.uf, detalle.despues.cuotas)}
+                </>
+            ),
+            ...detalle.despues,
+        },
+        { key: 'credito', item: 'Crédito hipotecario / Pago al contado', dark: true, ...detalle.credito },
+        { key: 'total', item: 'Total', dark: true, ...detalle.total },
+        { key: 'saldoTotal', item: 'Saldo total + reserva', dark: true, indent: true, pct: null, uf: detalle.saldoTotal.uf },
+    ].filter(Boolean);
+
+    return (
+        <div>
+            <div className="overflow-x-auto rounded-xl border border-[#2C2C2C]/10">
+                <table className="w-full min-w-[620px] text-sm font-jakarta">
+                    <thead>
+                        <tr className="bg-[#1C1C1E] text-gold text-xs uppercase tracking-[2px]">
+                            <th className="text-left font-semibold px-4 py-3">Ítem</th>
+                            <th className="text-left font-semibold px-3 py-3">Forma de pago</th>
+                            <th className="text-right font-semibold px-3 py-3">%</th>
+                            <th className="text-right font-semibold px-3 py-3">UF</th>
+                            <th className="text-right font-semibold px-4 py-3">CLP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((row) => (
+                            <tr key={row.key} className={row.dark ? `${darkRow} border-b border-white/10` : lightRow}>
+                                <td className={`py-3 pr-3 ${row.indent ? 'pl-8' : 'pl-4'} ${row.dark ? 'font-semibold' : ''}`}>{row.item}</td>
+                                <td className={`px-3 py-3 text-xs leading-snug ${row.dark ? '' : 'text-[#2C2C2C]'}`}>{row.forma || ''}</td>
+                                <td className={numCell}>{row.pct != null ? formatPct(row.pct, 2) : ''}</td>
+                                <td className={numCell}>{formatUf(row.uf, { decimals: true })}</td>
+                                <td className={`${numCell} pr-4 font-semibold`}>{clp(row.uf)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <p className="mt-2 text-right text-[11px] text-[#4A4A4A]/60 font-jakarta">
+                Los valores en UF se ajustan a diario. Cálculo referencial sobre el precio de lista.
+            </p>
+        </div>
+    );
+};
 
 const ProyectoDetail = () => {
     const { id } = useParams();
@@ -75,12 +185,11 @@ const ProyectoDetail = () => {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [tipologiaFiltro, setTipologiaFiltro] = useState('');
     const [showAllUnits, setShowAllUnits] = useState(false);
-    const [piePct, setPiePct] = useState(PIE_OPCIONES[PIE_OPCIONES.length - 1]);
 
     useDocumentMeta(
         proyecto?.nombre,
         proyecto
-            ? `Proyecto ${proyecto.nombre}${proyecto.inmobiliaria ? ` de ${proyecto.inmobiliaria}` : ''}${proyecto.comunas?.nombre ? ` en ${proyecto.comunas.nombre}` : ''}. Precios, descuentos y rentabilidad estimada.`
+            ? `Proyecto ${proyecto.nombre}${proyecto.inmobiliaria ? ` de ${proyecto.inmobiliaria}` : ''}${proyecto.comunas?.nombre ? ` en ${proyecto.comunas.nombre}` : ''}. Precios, unidades disponibles y detalle del pago.`
             : 'Proyecto de inversión — GARDET Propiedades'
     );
 
@@ -204,8 +313,8 @@ const ProyectoDetail = () => {
     const toClp = (uf) =>
         typeof ufValor === 'number' && !Number.isNaN(ufValor) && uf ? formatClp(Math.round(uf * ufValor)) : null;
 
-    const resumen = selectedUnit ? calcResumenInversion(selectedUnit, piePct, proyecto.bono_pie_max) : null;
-    const desde = unidades[0]?.precio_final_uf ?? proyecto.precio_desde_uf;
+    const detalle = selectedUnit ? calcDetallePago(selectedUnit, proyecto) : null;
+    const desde = unidades[0]?.precio_lista_uf ?? proyecto.precio_desde_uf;
     const amenidades = AMENIDADES.filter((a) => proyecto[a.key]);
     const beneficios = [
         proyecto.bono_pie_max > 0 && { label: 'Bono pie', value: `Hasta ${formatPct(proyecto.bono_pie_max)}` },
@@ -223,6 +332,7 @@ const ProyectoDetail = () => {
     const contactoPath = `/contacto?mensaje=${encodeURIComponent(contactMessage)}`;
 
     const visibleUnits = showAllUnits ? unidadesFiltradas : unidadesFiltradas.slice(0, UNIDADES_VISIBLES);
+    const m2 = (value) => (value != null ? Number(value).toLocaleString('es-CL') : '—');
 
     return (
         <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8">
@@ -309,7 +419,7 @@ const ProyectoDetail = () => {
                     {/* Content */}
                     <div className="p-5 sm:p-8 lg:p-10 bg-[#F5F2EC]">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
-                            {/* Header + units (before the summary on mobile) */}
+                            {/* Header, units and payment detail (before the summary on mobile) */}
                             <div className="lg:col-span-2 lg:row-start-1 space-y-8 min-w-0">
                                 <div>
                                     {proyecto.inmobiliaria && (
@@ -340,12 +450,6 @@ const ProyectoDetail = () => {
                                             <CalendarCheck className="h-4 w-4 mr-2 text-[#A1917B]" />
                                             {formatEntrega(proyecto.entrega)}
                                         </div>
-                                        {proyecto.puntaje != null && (
-                                            <div className="inline-flex items-center bg-gold/15 border border-gold/40 text-[#7E6649] px-4 py-2 text-sm font-jakarta font-semibold rounded">
-                                                <Star className="h-4 w-4 mr-2" />
-                                                Puntaje {Number(proyecto.puntaje).toLocaleString('es-CL')}
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
 
@@ -353,8 +457,8 @@ const ProyectoDetail = () => {
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                                     {[
                                         { icon: Tag, value: desde != null ? formatUf(desde) : '—', label: 'Precio desde' },
-                                        { icon: BadgePercent, value: proyecto.dscto_max ? formatPct(proyecto.dscto_max) : '—', label: 'Descuento hasta' },
-                                        { icon: TrendingUp, value: formatPct(proyecto.cap_rate, 1), label: 'Cap rate prom.' },
+                                        { icon: Gift, value: proyecto.bono_pie_max > 0 ? formatPct(proyecto.bono_pie_max) : '—', label: 'Bono pie hasta' },
+                                        { icon: LayoutGrid, value: tipologias.length || '—', label: 'Tipologías' },
                                         { icon: KeyRound, value: unidades.length, label: 'Unidades disp.' },
                                     ].map(({ icon: Icon, value, label }) => (
                                         <div key={label} className="bg-white/80 border border-[#2C2C2C]/10 rounded-lg p-4 text-center hover:border-[#A1917B]/40 transition-colors">
@@ -404,12 +508,10 @@ const ProyectoDetail = () => {
                                                         <tr className="text-[10px] text-[#A1917B] uppercase tracking-[3px] border-b border-[#2C2C2C]/10">
                                                             <th className="text-left font-semibold px-4 py-3">Depto</th>
                                                             <th className="text-left font-semibold px-2 py-3">Tipología</th>
-                                                            <th className="text-left font-semibold px-2 py-3 hidden md:table-cell">Orient.</th>
-                                                            <th className="text-right font-semibold px-2 py-3">m²</th>
-                                                            <th className="text-right font-semibold px-2 py-3 hidden lg:table-cell">Precio lista</th>
-                                                            <th className="text-right font-semibold px-2 py-3">Dcto.</th>
-                                                            <th className="text-right font-semibold px-2 py-3">Precio final</th>
-                                                            <th className="text-right font-semibold px-4 py-3 hidden md:table-cell">Cap rate</th>
+                                                            <th className="text-left font-semibold px-2 py-3">Orient.</th>
+                                                            <th className="text-right font-semibold px-2 py-3">m² total</th>
+                                                            <th className="text-right font-semibold px-2 py-3 hidden md:table-cell">m² pond.</th>
+                                                            <th className="text-right font-semibold px-4 py-3">Precio lista</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -427,14 +529,10 @@ const ProyectoDetail = () => {
                                                                         {u.numero || '—'}
                                                                     </td>
                                                                     <td className="px-2 py-3 text-[#2C2C2C]">{u.tipologia}</td>
-                                                                    <td className="px-2 py-3 text-[#4A4A4A] hidden md:table-cell">{u.orientacion || '—'}</td>
-                                                                    <td className="px-2 py-3 text-right text-[#4A4A4A]">{u.m2_total != null ? Number(u.m2_total).toLocaleString('es-CL') : '—'}</td>
-                                                                    <td className="px-2 py-3 text-right text-[#4A4A4A]/70 line-through hidden lg:table-cell">
-                                                                        {u.dscto > 0 ? formatUf(u.precio_lista_uf) : ''}
-                                                                    </td>
-                                                                    <td className="px-2 py-3 text-right text-green-700 font-semibold">{u.dscto > 0 ? formatPct(u.dscto) : '—'}</td>
-                                                                    <td className="px-2 py-3 text-right font-bold text-[#2C2C2C] whitespace-nowrap">{formatUf(u.precio_final_uf)}</td>
-                                                                    <td className="px-4 py-3 text-right text-[#2C2C2C] hidden md:table-cell">{formatPct(u.cap_rate, 1)}</td>
+                                                                    <td className="px-2 py-3 text-[#4A4A4A]">{u.orientacion || '—'}</td>
+                                                                    <td className="px-2 py-3 text-right text-[#4A4A4A]">{m2(u.m2_total)}</td>
+                                                                    <td className="px-2 py-3 text-right text-[#4A4A4A] hidden md:table-cell">{m2(u.m2_ponderado)}</td>
+                                                                    <td className="px-4 py-3 text-right font-bold text-[#2C2C2C] whitespace-nowrap">{formatUf(u.precio_lista_uf)}</td>
                                                                 </tr>
                                                             );
                                                         })}
@@ -458,18 +556,12 @@ const ProyectoDetail = () => {
                                                                     Depto {u.numero || '—'} · {u.tipologia}
                                                                 </span>
                                                                 <span className="font-jakarta font-bold text-[#2C2C2C] text-sm whitespace-nowrap">
-                                                                    {formatUf(u.precio_final_uf)}
+                                                                    {formatUf(u.precio_lista_uf)}
                                                                 </span>
                                                             </div>
-                                                            <div className="flex items-center justify-between gap-3 mt-1 text-xs font-jakarta text-[#4A4A4A]/80">
-                                                                <span>
-                                                                    {u.m2_total != null ? `${Number(u.m2_total).toLocaleString('es-CL')} m²` : ''}
-                                                                    {u.orientacion ? ` · ${u.orientacion}` : ''}
-                                                                </span>
-                                                                <span>
-                                                                    {u.dscto > 0 && <span className="text-green-700 font-semibold">-{formatPct(u.dscto)}</span>}
-                                                                    {u.cap_rate != null && <span> · Cap {formatPct(u.cap_rate, 1)}</span>}
-                                                                </span>
+                                                            <div className="mt-1 text-xs font-jakarta text-[#4A4A4A]/80">
+                                                                {u.m2_total != null ? `${m2(u.m2_total)} m²` : ''}
+                                                                {u.orientacion ? ` · ${u.orientacion}` : ''}
                                                             </div>
                                                         </button>
                                                     );
@@ -486,102 +578,68 @@ const ProyectoDetail = () => {
                                                     {showAllUnits ? 'Ver menos' : `Ver las ${unidadesFiltradas.length} unidades`}
                                                 </button>
                                             )}
-                                            <p className="mt-3 text-[11px] text-[#4A4A4A]/60 font-jakarta">
-                                                Precios con el descuento máximo vigente. Arriendo y cap rate son estimaciones referenciales.
-                                            </p>
                                         </>
                                     )}
                                 </div>
+
+                                {/* Payment detail */}
+                                {detalle && (
+                                    <div className="border-t border-[#2C2C2C]/10 pt-8" id="detalle-pago">
+                                        <SectionTitle icon={Receipt}>Detalle del pago</SectionTitle>
+                                        <p className="-mt-2 mb-4 text-sm font-jakarta text-[#4A4A4A]">
+                                            {selectedUnit.numero ? `Depto ${selectedUnit.numero}` : 'Unidad'} · {formatTipologia(selectedUnit.tipologia)} · precio de lista {formatUf(selectedUnit.precio_lista_uf, { decimals: true })}
+                                        </p>
+                                        <DetallePago detalle={detalle} proyecto={proyecto} toClp={toClp} />
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Investment summary (sticky on desktop) */}
+                            {/* Unit summary (sticky on desktop) */}
                             <aside className="lg:col-start-3 lg:row-start-1 lg:row-span-2 min-w-0">
                                 <div className="lg:sticky lg:top-24 space-y-6">
-                                    {resumen && (
+                                    {detalle && (
                                         <div className="bg-white/80 rounded-xl border border-[#2C2C2C]/10 overflow-hidden">
                                             <div className="p-5 border-b border-[#2C2C2C]/10">
                                                 <p className="text-[#A1917B] text-[10px] font-jakarta font-semibold tracking-[4px] uppercase mb-2">
-                                                    Resumen de la inversión
+                                                    Unidad seleccionada
                                                 </p>
                                                 <p className="font-jakarta font-bold text-[#2C2C2C]">
                                                     {selectedUnit.numero ? `Depto ${selectedUnit.numero}` : 'Unidad'} · {formatTipologia(selectedUnit.tipologia)}
                                                 </p>
                                                 <p className="text-xs text-[#4A4A4A]/70 font-jakarta mt-0.5">
                                                     {[
-                                                        selectedUnit.m2_total != null && `${Number(selectedUnit.m2_total).toLocaleString('es-CL')} m² totales`,
-                                                        selectedUnit.m2_ponderado != null && `${Number(selectedUnit.m2_ponderado).toLocaleString('es-CL')} m² pond.`,
+                                                        selectedUnit.m2_total != null && `${m2(selectedUnit.m2_total)} m² totales`,
+                                                        selectedUnit.m2_ponderado != null && `${m2(selectedUnit.m2_ponderado)} m² pond.`,
                                                         selectedUnit.orientacion && `Orient. ${selectedUnit.orientacion}`,
                                                     ].filter(Boolean).join(' · ')}
                                                 </p>
                                             </div>
 
                                             <div className="bg-gold text-obsidian px-5 py-4">
-                                                <div className="text-xs font-jakarta font-bold uppercase tracking-wider text-obsidian/80">Precio final</div>
-                                                <div className="flex items-baseline gap-3 flex-wrap">
-                                                    <span className="text-2xl font-ysabeau font-bold">{formatUf(resumen.precio, { decimals: true })}</span>
-                                                    {selectedUnit.dscto > 0 && (
-                                                        <span className="text-sm font-jakarta text-obsidian/60 line-through">{formatUf(selectedUnit.precio_lista_uf)}</span>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center justify-between text-xs font-jakarta mt-1">
-                                                    <span className="text-obsidian/75">{toClp(resumen.precio) || ' '}</span>
-                                                    {selectedUnit.dscto > 0 && (
-                                                        <span className="font-bold bg-obsidian text-gold px-2 py-0.5 rounded">-{formatPct(selectedUnit.dscto)}</span>
-                                                    )}
-                                                </div>
+                                                <div className="text-xs font-jakarta font-bold uppercase tracking-wider text-obsidian/80">Precio de lista</div>
+                                                <div className="text-2xl font-ysabeau font-bold">{formatUf(detalle.precio, { decimals: true })}</div>
+                                                <div className="text-xs font-jakarta text-obsidian/75 mt-1">{toClp(detalle.precio) || ' '}</div>
                                             </div>
 
                                             <div className="p-5">
-                                                <div className="mb-3">
-                                                    <p className="text-xs font-jakarta font-semibold text-[#2C2C2C] mb-2">Pie</p>
-                                                    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Porcentaje de pie">
-                                                        {PIE_OPCIONES.map((pct) => (
-                                                            <button
-                                                                key={pct}
-                                                                type="button"
-                                                                role="radio"
-                                                                aria-checked={piePct === pct}
-                                                                onClick={() => setPiePct(pct)}
-                                                                className={`py-2 rounded-lg text-sm font-jakarta font-bold border transition-colors ${piePct === pct
-                                                                    ? 'bg-[#2C2C2C] text-gold border-[#2C2C2C]'
-                                                                    : 'bg-white text-[#2C2C2C] border-[#2C2C2C]/15 hover:border-gold'
-                                                                    }`}
-                                                            >
-                                                                {formatPct(pct)}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                <SummaryRow label={`Pie total (${formatPct(piePct)})`} value={formatUf(resumen.pieTotalUf)} sub={toClp(resumen.pieTotalUf)} />
-                                                {resumen.bonoPieUf > 0 && (
-                                                    <SummaryRow
-                                                        label="Bono pie inmobiliaria"
-                                                        value={`- ${formatUf(resumen.bonoPieUf)}`}
-                                                        sub={toClp(resumen.bonoPieUf)}
-                                                        negative
-                                                    />
+                                                <SummaryRow label={`Pie total (${formatPct(detalle.pie.pct)})`} value={formatUf(detalle.pie.uf)} sub={toClp(detalle.pie.uf)} />
+                                                {detalle.aporte.pct > 0 && (
+                                                    <SummaryRow label={`Aporte inmobiliaria (${formatPct(detalle.aporte.pct)})`} value={formatUf(detalle.aporte.uf)} sub={toClp(detalle.aporte.uf)} />
                                                 )}
-                                                <SummaryRow label="Pie a pagar" value={formatUf(resumen.pieAPagarUf)} sub={toClp(resumen.pieAPagarUf)} strong />
-                                                <SummaryRow label="Crédito hipotecario" value={formatUf(resumen.creditoUf)} />
-                                                <SummaryRow
-                                                    label="Dividendo referencial"
-                                                    value={formatUf(resumen.dividendoUf, { decimals: true })}
-                                                    sub={toClp(resumen.dividendoUf)}
-                                                    strong
-                                                />
+                                                <SummaryRow label="Saldo pie a pagar" value={formatUf(detalle.saldo.uf)} sub={toClp(detalle.saldo.uf)} strong />
+                                                <SummaryRow label={`Crédito hipotecario (${formatPct(detalle.credito.pct)})`} value={formatUf(detalle.credito.uf)} sub={toClp(detalle.credito.uf)} />
                                                 {selectedUnit.arriendo_clp > 0 && (
                                                     <SummaryRow label="Arriendo estimado" value={`${formatClp(selectedUnit.arriendo_clp)}/mes`} />
-                                                )}
-                                                {selectedUnit.cap_rate != null && (
-                                                    <SummaryRow label="Cap rate estimado" value={formatPct(selectedUnit.cap_rate, 1)} strong />
                                                 )}
                                                 {proyecto.reserva_clp > 0 && (
                                                     <SummaryRow label="Reserva" value={formatClp(proyecto.reserva_clp)} />
                                                 )}
-                                                <p className="mt-3 text-[11px] leading-relaxed text-[#4A4A4A]/60 font-jakarta">
-                                                    Dividendo referencial sin seguros, a {PLAZO_HIPOTECARIO_ANOS} años con tasa {formatPct(TASA_HIPOTECARIA_ANUAL, 1)} anual. Sujeto a evaluación bancaria.
-                                                </p>
+                                                <a
+                                                    href="#detalle-pago"
+                                                    className="mt-3 inline-block text-xs font-jakarta font-semibold text-[#7E6649] hover:text-[#2C2C2C] underline underline-offset-2"
+                                                >
+                                                    Ver detalle del pago
+                                                </a>
                                             </div>
                                         </div>
                                     )}

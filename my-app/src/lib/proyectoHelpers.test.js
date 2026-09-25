@@ -1,12 +1,12 @@
 import {
     availableUnits,
-    calcDividendoUf,
-    calcResumenInversion,
+    calcDetallePago,
     formatEntrega,
     formatPct,
     formatTipologia,
     formatUf,
     getCoverImage,
+    m2Range,
     parseTipologia,
     uniqueTipologias,
 } from './proyectoHelpers';
@@ -24,11 +24,11 @@ describe('proyectoHelpers', () => {
         expect(uniqueTipologias(unidades)).toEqual(['Estudio', '2D-1B', '2D-2B', '3D-2B']);
     });
 
-    test('availableUnits drops unavailable units and sorts by final price', () => {
+    test('availableUnits drops unavailable units and sorts by list price', () => {
         const unidades = [
-            { id: 1, precio_final_uf: 3000, disponible: true },
-            { id: 2, precio_final_uf: 2000, disponible: false },
-            { id: 3, precio_final_uf: 2500, disponible: true },
+            { id: 1, precio_lista_uf: 3000, disponible: true },
+            { id: 2, precio_lista_uf: 2000, disponible: false },
+            { id: 3, precio_lista_uf: 2500, disponible: true },
         ];
         expect(availableUnits(unidades).map((u) => u.id)).toEqual([3, 1]);
     });
@@ -49,21 +49,44 @@ describe('proyectoHelpers', () => {
         expect(getCoverImage([])).toBeNull();
     });
 
-    test('calcDividendoUf uses French amortization (4.5% / 25 years by default)', () => {
-        expect(calcDividendoUf(0)).toBe(0);
-        expect(calcDividendoUf(2155.472)).toBeCloseTo(11.98, 1);
+    test('m2Range returns a rounded min–max range', () => {
+        expect(m2Range([{ m2_total: 37.88 }, { m2_total: 70.7 }])).toBe('37–71');
+        expect(m2Range([{ m2_total: 54.7 }])).toBe('54–55');
+        expect(m2Range([])).toBeNull();
     });
 
-    test('calcResumenInversion applies bono pie up to the chosen pie', () => {
-        const unidad = { precio_final_uf: 2694.34 };
-        const r = calcResumenInversion(unidad, 0.2, 0.15);
-        expect(r.pieTotalUf).toBeCloseTo(538.868, 3);
-        expect(r.bonoPieUf).toBeCloseTo(404.151, 3);
-        expect(r.pieAPagarUf).toBeCloseTo(134.717, 3);
-        expect(r.creditoUf).toBeCloseTo(2155.472, 3);
+    test('calcDetallePago reproduces the reference payment breakdown', () => {
+        const proyecto = {
+            pie_pct: 0.2,
+            bono_pie_max: 0.1,
+            abono_pct: 0.01,
+            pie_antes_pct: 0.05,
+            pie_antes_cuotas: 25,
+            pie_despues_cuotas: 24,
+        };
+        const d = calcDetallePago({ precio_lista_uf: 2494 }, proyecto);
+        expect(d.pie.uf).toBeCloseTo(498.8, 2);
+        expect(d.aporte.uf).toBeCloseTo(249.4, 2);
+        expect(d.saldo.uf).toBeCloseTo(249.4, 2);
+        expect(d.abono.uf).toBeCloseTo(24.94, 2);
+        expect(d.antes.uf).toBeCloseTo(124.7, 2);
+        expect(d.despues.uf).toBeCloseTo(99.76, 2);
+        expect(d.despues.pct).toBeCloseTo(0.04, 6);
+        expect(d.credito.uf).toBeCloseTo(1995.2, 2);
+        expect(d.total.uf).toBe(2494);
+        expect(d.saldoTotal.uf).toBeCloseTo(2244.6, 2);
+    });
 
-        // Bono larger than the chosen pie is capped at the pie
-        const capped = calcResumenInversion(unidad, 0.1, 0.15);
-        expect(capped.pieAPagarUf).toBe(0);
+    test('calcDetallePago caps the plan when the bono covers most of the pie', () => {
+        const d = calcDetallePago({ precio_lista_uf: 1000 }, { pie_pct: 0.2, bono_pie_max: 0.15 });
+        expect(d.saldo.pct).toBeCloseTo(0.05, 6);
+        expect(d.abono.pct).toBeCloseTo(0.01, 6);
+        expect(d.antes.pct).toBeCloseTo(0.04, 6);
+        expect(d.despues.pct).toBe(0);
+
+        const full = calcDetallePago({ precio_lista_uf: 1000 }, { pie_pct: 0.2, bono_pie_max: 0.2 });
+        expect(full.saldo.pct).toBe(0);
+        expect(full.abono.pct).toBe(0);
+        expect(full.antes.pct).toBe(0);
     });
 });
