@@ -20,6 +20,8 @@ async function main() {
   const sizes = [
     { name: 'favicon-16.png', size: 16 },
     { name: 'favicon-32.png', size: 32 },
+    { name: 'favicon-48.png', size: 48 },
+    { name: 'favicon-192.png', size: 192 },
     { name: 'apple-touch-icon.png', size: 180 },
   ];
 
@@ -28,13 +30,13 @@ async function main() {
   for (const { name, size } of sizes) {
     const buf = await sharp(svg).resize(size, size).png().toBuffer();
     fs.writeFileSync(path.join(publicDir, name), buf);
-    if (size <= 32) pngBuffers.push(buf);
+    if (size <= 48) pngBuffers.push(buf);
   }
 
   const ico = await pngToIco(pngBuffers);
   fs.writeFileSync(path.join(publicDir, 'favicon.ico'), ico);
 
-  console.log('Generated favicon.ico, favicon-16.png, favicon-32.png, apple-touch-icon.png');
+  console.log('Generated favicon.ico, favicon-16.png, favicon-32.png, favicon-48.png, favicon-192.png, apple-touch-icon.png');
 }
 
 main().catch((err) => {

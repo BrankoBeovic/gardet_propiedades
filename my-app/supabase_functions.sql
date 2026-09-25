@@ -2,9 +2,9 @@
 -- Run these in your Supabase SQL Editor (after or with supabase_rls.sql)
 --
 -- Ownership: update_property_location requires auth.uid() = property owner.
--- get_property_with_location is callable by authenticated owners for any of
--- their properties, and by anon/authenticated only for publicly listed estados
--- (publicada, vendida, arrendada).
+-- get_property_with_location is callable by authenticated users only (used by
+-- the Dashboard). Both functions run as SECURITY INVOKER, so RLS on propiedades
+-- applies on top of the checks inside each function.
 
 -- Function to update property location (owner only)
 CREATE OR REPLACE FUNCTION update_property_location(
@@ -14,8 +14,8 @@ CREATE OR REPLACE FUNCTION update_property_location(
 )
 RETURNS VOID
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
+SECURITY INVOKER
+SET search_path = public, extensions
 AS $$
 BEGIN
     IF auth.uid() IS NULL THEN
@@ -50,8 +50,8 @@ RETURNS TABLE (
     ubicacion_lng DOUBLE PRECISION
 )
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
+SECURITY INVOKER
+SET search_path = public, extensions
 AS $$
 BEGIN
     RETURN QUERY
@@ -82,6 +82,7 @@ REVOKE ALL ON FUNCTION update_property_location(BIGINT, DOUBLE PRECISION, DOUBLE
 REVOKE ALL ON FUNCTION update_property_location(BIGINT, DOUBLE PRECISION, DOUBLE PRECISION) FROM anon;
 GRANT EXECUTE ON FUNCTION update_property_location(BIGINT, DOUBLE PRECISION, DOUBLE PRECISION) TO authenticated;
 
--- Read RPC: allow anon for published (enforced inside function); owners for drafts
+-- Read RPC: authenticated only
 REVOKE ALL ON FUNCTION get_property_with_location(BIGINT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION get_property_with_location(BIGINT) TO anon, authenticated;
+REVOKE ALL ON FUNCTION get_property_with_location(BIGINT) FROM anon;
+GRANT EXECUTE ON FUNCTION get_property_with_location(BIGINT) TO authenticated;
