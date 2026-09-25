@@ -1,2 +1,5 @@
 # Supabase CLI temp files
 supabase/.temp
+
+# Lavish review artifacts
+.lavish/

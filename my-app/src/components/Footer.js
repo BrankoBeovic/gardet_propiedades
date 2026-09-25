@@ -83,9 +83,20 @@ const Footer = () => {
                     </div>
                 </div>
 
-                {/* Gold separator line */}
-                <div className="mt-6 pt-5 border-t border-obsidian-50/10 flex justify-center">
+                {/* Gold separator line + developer credit */}
+                <div className="mt-6 pt-5 border-t border-obsidian-50/10 flex flex-col items-center gap-3">
                     <div className="gold-line"></div>
+                    <p className="font-jakarta text-[11px] tracking-[0.2em] uppercase text-ivory/35">
+                        Powered by{' '}
+                        <a
+                            href="https://zoralabs.cl"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold text-ivory/55 hover:text-gold transition-colors"
+                        >
+                            Zoralabs
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>
