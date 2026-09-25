@@ -29,3 +29,14 @@ export function validateImageFile(file) {
 
   return { ok: true, ext };
 }
+
+/**
+ * Extracts the object path inside a public bucket from its public URL
+ * (".../storage/v1/object/public/<bucket>/<path>" → "<path>"). Returns null if it doesn't match.
+ */
+export function storagePathFromPublicUrl(url, bucket) {
+  const marker = `/object/public/${bucket}/`;
+  const idx = String(url || '').indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(url.slice(idx + marker.length).split('?')[0]);
+}

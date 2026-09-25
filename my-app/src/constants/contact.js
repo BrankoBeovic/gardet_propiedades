@@ -34,4 +34,15 @@ export function propertyInquiryWhatsApp(titulo, id) {
   return `${CONTACT_WHATSAPP_URL}?text=${text}`;
 }
 
+/**
+ * Builds a WhatsApp link for a project (and optionally a specific unit) inquiry.
+ */
+export function projectInquiryWhatsApp(nombre, unidadNumero) {
+  const unidad = unidadNumero ? `, unidad ${unidadNumero}` : '';
+  const text = encodeURIComponent(
+    `Hola, me interesa el proyecto "${nombre || ''}"${unidad}. ¿Podrían darme más información?`
+  );
+  return `${CONTACT_WHATSAPP_URL}?text=${text}`;
+}
+
 export const VALORACION_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Solicitud de valoración gratuita')}`;
