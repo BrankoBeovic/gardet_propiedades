@@ -9,6 +9,8 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import PropertiesPage from './pages/PropertiesPage';
 import PropertyDetail from './pages/PropertyDetail';
+import ProyectosPage from './pages/ProyectosPage';
+import ProyectoDetail from './pages/ProyectoDetail';
 import SobreNosotros from './pages/SobreNosotros';
 import Contacto from './pages/Contacto';
 import { peekPendingScroll, restoreScrollY } from './utils/scrollMemory';
@@ -93,6 +95,8 @@ function App() {
               <Route path="/venta" element={<PropertiesPage operationType="Venta" />} />
               <Route path="/arriendo" element={<PropertiesPage operationType="Arriendo" />} />
               <Route path="/propiedad/:id" element={<PropertyDetail />} />
+              <Route path="/proyectos" element={<ProyectosPage />} />
+              <Route path="/proyecto/:id" element={<ProyectoDetail />} />
               <Route path="/sobre-nosotros" element={<SobreNosotros />} />
               <Route path="/quienes-somos" element={<SobreNosotros />} />
               <Route path="/contacto" element={<Contacto />} />

@@ -1,21 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { Plus, List, ArrowLeft, LogOut } from 'lucide-react';
+import { Plus, List, ArrowLeft, LogOut, Building2 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { PROPERTY_DASHBOARD_SELECT } from '../lib/propertyHelpers';
+import { storagePathFromPublicUrl } from '../lib/imageUpload';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import PropertyList from '../components/PropertyList';
 import PropertyForm from '../components/PropertyForm';
+import ProyectoList from '../components/ProyectoList';
+import ProyectoForm from '../components/ProyectoForm';
+
+const PROYECTO_DASHBOARD_SELECT = `
+  *,
+  proyectos_imagenes (url, es_portada, orden),
+  proyectos_unidades (*)
+`;
 
 const Dashboard = () => {
     const { user, loading: authLoading, signOut } = useAuth();
     const [properties, setProperties] = useState([]);
     const [listLoading, setListLoading] = useState(true);
     const [listError, setListError] = useState(null);
+    const [proyectos, setProyectos] = useState([]);
+    const [proyectosLoading, setProyectosLoading] = useState(true);
+    const [proyectosError, setProyectosError] = useState(null);
     const [feedback, setFeedback] = useState(null);
-    const [activeView, setActiveView] = useState('list'); // 'list', 'create', or 'edit'
+    // 'list' | 'create' | 'edit' | 'proyectos' | 'proyecto-create' | 'proyecto-edit'
+    const [activeView, setActiveView] = useState('list');
     const [editingProperty, setEditingProperty] = useState(null);
+    const [editingProyecto, setEditingProyecto] = useState(null);
     const navigate = useNavigate();
 
     useDocumentMeta('Dashboard', 'Panel de administración de propiedades GARDET.');
@@ -23,8 +37,28 @@ const Dashboard = () => {
     useEffect(() => {
         if (!authLoading && user) {
             loadProperties(user.id);
+            loadProyectos(user.id);
         }
     }, [authLoading, user]);
+
+    const loadProyectos = async (userId) => {
+        setProyectosLoading(true);
+        setProyectosError(null);
+        try {
+            const { data, error } = await supabase
+                .from('proyectos')
+                .select(PROYECTO_DASHBOARD_SELECT)
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            setProyectos(data || []);
+        } catch (error) {
+            console.error('Error loading proyectos:', error);
+            setProyectosError(error.message || 'No se pudieron cargar los proyectos');
+        } finally {
+            setProyectosLoading(false);
+        }
+    };
 
     const loadProperties = async (userId) => {
         setListLoading(true);
@@ -151,6 +185,66 @@ const Dashboard = () => {
         setEditingProperty(null);
     };
 
+    const showProyectos = () => {
+        setActiveView('proyectos');
+        setEditingProyecto(null);
+    };
+
+    const handleNewProyecto = () => {
+        setEditingProyecto(null);
+        setActiveView('proyecto-create');
+        setFeedback(null);
+    };
+
+    const handleEditProyecto = (proyecto) => {
+        setEditingProyecto(proyecto);
+        setActiveView('proyecto-edit');
+        setFeedback(null);
+    };
+
+    const handleSaveProyecto = () => {
+        loadProyectos(user.id);
+        showProyectos();
+        setFeedback({ type: 'success', message: 'Proyecto guardado correctamente' });
+    };
+
+    const handleDeleteProyecto = async (proyecto) => {
+        if (!window.confirm(`¿Estás seguro de que quieres eliminar el proyecto "${proyecto.nombre}" y todas sus unidades?`)) {
+            return;
+        }
+
+        setFeedback(null);
+        try {
+            const paths = (proyecto.proyectos_imagenes || [])
+                .map((img) => storagePathFromPublicUrl(img.url, 'propiedades'))
+                .filter(Boolean);
+            if (paths.length) {
+                await supabase.storage.from('propiedades').remove(paths);
+            }
+
+            // Units and image rows are removed by ON DELETE CASCADE
+            const { error } = await supabase
+                .from('proyectos')
+                .delete()
+                .eq('id', proyecto.id)
+                .eq('user_id', user.id);
+            if (error) throw error;
+
+            loadProyectos(user.id);
+            setFeedback({ type: 'success', message: 'Proyecto eliminado exitosamente' });
+        } catch (error) {
+            console.error('Error deleting proyecto:', error);
+            setFeedback({ type: 'error', message: 'Error al eliminar el proyecto: ' + error.message });
+        }
+    };
+
+    const isEditing = activeView === 'edit' || activeView === 'proyecto-edit';
+    const tabClass = (active) =>
+        `${active
+            ? 'border-gold text-gold'
+            : 'border-transparent text-ivory/40 hover:text-ivory/70 hover:border-ivory/20'
+        } whitespace-nowrap py-4 px-1 border-b-2 font-jakarta font-medium text-sm flex items-center transition-colors`;
+
     if (authLoading) return (
         <div className="min-h-screen flex items-center justify-center pt-20">
             <div className="text-center">
@@ -197,18 +291,18 @@ const Dashboard = () => {
                 )}
 
                 {/* Navigation */}
-                {activeView === 'edit' ? (
+                {isEditing ? (
                     <div className="mb-6">
                         <button
-                            onClick={handleBackToList}
+                            onClick={activeView === 'edit' ? handleBackToList : showProyectos}
                             className="inline-flex items-center text-ivory/50 hover:text-gold transition-colors mb-4 font-jakarta text-sm"
                         >
                             <ArrowLeft className="h-4 w-4 mr-2" />
-                            Volver a Mis Propiedades
+                            {activeView === 'edit' ? 'Volver a Mis Propiedades' : 'Volver a Proyectos'}
                         </button>
                         <div className="bg-gold/10 border-l-2 border-gold p-4 mb-4">
                             <h2 className="text-base font-jakarta font-semibold text-ivory">
-                                Editando: {editingProperty?.titulo}
+                                Editando: {activeView === 'edit' ? editingProperty?.titulo : editingProyecto?.nombre}
                             </h2>
                             <p className="text-xs text-ivory/40 font-jakarta mt-1">
                                 Modifica los campos que necesites y guarda los cambios
@@ -217,27 +311,23 @@ const Dashboard = () => {
                     </div>
                 ) : (
                     <div className="mb-6">
-                        <div className="border-b border-obsidian-50/10">
+                        <div className="border-b border-obsidian-50/10 overflow-x-auto">
                             <nav className="-mb-px flex space-x-8">
-                                <button
-                                    onClick={handleBackToList}
-                                    className={`${activeView === 'list'
-                                        ? 'border-gold text-gold'
-                                        : 'border-transparent text-ivory/40 hover:text-ivory/70 hover:border-ivory/20'
-                                        } whitespace-nowrap py-4 px-1 border-b-2 font-jakarta font-medium text-sm flex items-center transition-colors`}
-                                >
+                                <button onClick={handleBackToList} className={tabClass(activeView === 'list')}>
                                     <List className="h-4 w-4 mr-2" />
                                     Mis Propiedades
                                 </button>
-                                <button
-                                    onClick={handleNewProperty}
-                                    className={`${activeView === 'create'
-                                        ? 'border-gold text-gold'
-                                        : 'border-transparent text-ivory/40 hover:text-ivory/70 hover:border-ivory/20'
-                                        } whitespace-nowrap py-4 px-1 border-b-2 font-jakarta font-medium text-sm flex items-center transition-colors`}
-                                >
+                                <button onClick={handleNewProperty} className={tabClass(activeView === 'create')}>
                                     <Plus className="h-4 w-4 mr-2" />
                                     Nueva Propiedad
+                                </button>
+                                <button onClick={showProyectos} className={tabClass(activeView === 'proyectos')}>
+                                    <Building2 className="h-4 w-4 mr-2" />
+                                    Proyectos
+                                </button>
+                                <button onClick={handleNewProyecto} className={tabClass(activeView === 'proyecto-create')}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Nuevo Proyecto
                                 </button>
                             </nav>
                         </div>
@@ -245,7 +335,28 @@ const Dashboard = () => {
                 )}
 
                 {/* Content */}
-                {activeView === 'list' ? (
+                {activeView === 'proyectos' ? (
+                    <div className="card-light overflow-hidden rounded-lg">
+                        {proyectosError && (
+                            <div className="m-4 rounded-lg px-4 py-3 text-sm font-jakarta bg-red-50 border border-red-200 text-red-700">
+                                {proyectosError}
+                            </div>
+                        )}
+                        <ProyectoList
+                            proyectos={proyectos}
+                            onEdit={handleEditProyecto}
+                            onDelete={handleDeleteProyecto}
+                            loading={proyectosLoading}
+                        />
+                    </div>
+                ) : activeView === 'proyecto-create' || activeView === 'proyecto-edit' ? (
+                    <ProyectoForm
+                        key={editingProyecto?.id ?? 'new'}
+                        proyecto={editingProyecto}
+                        onSave={handleSaveProyecto}
+                        onCancel={showProyectos}
+                    />
+                ) : activeView === 'list' ? (
                     <div className="card-light overflow-hidden rounded-lg">
                         {listError && (
                             <div className="m-4 rounded-lg px-4 py-3 text-sm font-jakarta bg-red-50 border border-red-200 text-red-700">

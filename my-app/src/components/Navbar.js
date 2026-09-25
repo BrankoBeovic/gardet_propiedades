@@ -30,6 +30,7 @@ const Navbar = () => {
     const navItems = [
         { label: 'Venta', path: '/venta' },
         { label: 'Arriendo', path: '/arriendo' },
+        { label: 'Proyectos', path: '/proyectos' },
         { label: 'Sobre Nosotros', path: '/sobre-nosotros' },
         { label: 'Contacto', path: '/contacto' },
         ...(user ? [{ label: 'Dashboard', path: '/dashboard' }] : [])
