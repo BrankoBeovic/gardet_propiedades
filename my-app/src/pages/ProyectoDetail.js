@@ -342,9 +342,10 @@ const ProyectoDetail = () => {
                     <span>Volver</span>
                 </button>
 
-                <div className="card-light rounded-2xl overflow-hidden shadow-lg shadow-black/20">
+                {/* No overflow-hidden here: it would break the sticky summary column */}
+                <div className="card-light rounded-2xl shadow-lg shadow-black/20">
                     {/* Image Gallery */}
-                    <div className="relative bg-[#EBE7E0]">
+                    <div className="relative bg-[#EBE7E0] rounded-t-2xl overflow-hidden">
                         <div className="relative h-[300px] sm:h-[500px] bg-[#EBE7E0]">
                             {currentImage ? (
                                 <button
@@ -414,7 +415,7 @@ const ProyectoDetail = () => {
                     </div>
 
                     {/* Content */}
-                    <div className="p-5 sm:p-8 lg:p-10 bg-[#F5F2EC]">
+                    <div className="p-5 sm:p-8 lg:p-10 bg-[#F5F2EC] rounded-b-2xl">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
                             {/* Header, units and payment detail (before the summary on mobile) */}
                             <div className="lg:col-span-2 lg:row-start-1 space-y-8 min-w-0">
@@ -593,7 +594,7 @@ const ProyectoDetail = () => {
 
                             {/* Unit summary (sticky on desktop) */}
                             <aside className="lg:col-start-3 lg:row-start-1 lg:row-span-2 min-w-0">
-                                <div className="lg:sticky lg:top-24 space-y-6">
+                                <div className="lg:sticky lg:top-20 space-y-5">
                                     {detalle && (
                                         <div className="bg-white/80 rounded-xl border border-[#2C2C2C]/10 overflow-hidden">
                                             <div className="p-5 border-b border-[#2C2C2C]/10">
@@ -641,15 +642,16 @@ const ProyectoDetail = () => {
                                         </div>
                                     )}
 
-                                    <div className="bg-gold rounded-xl p-6 shadow-xl">
-                                        <h3 className="text-lg font-jakarta font-bold text-obsidian mb-3">¿Te interesa este proyecto?</h3>
-                                        <p className="text-obsidian/90 mb-5 text-sm font-jakarta font-medium">
+                                    <div className="bg-gold rounded-xl p-5 shadow-xl">
+                                        <h3 className="text-lg font-jakarta font-bold text-obsidian mb-2">¿Te interesa este proyecto?</h3>
+                                        <p className="text-obsidian/90 mb-4 text-sm font-jakarta font-medium">
                                             Te asesoramos en la elección de la unidad, el financiamiento y la reserva.
                                         </p>
-                                        <div className="flex flex-col gap-3">
+                                        {/* Side by side so the sticky column fits typical laptop heights */}
+                                        <div className="grid grid-cols-2 gap-3">
                                             <Link
                                                 to={contactoPath}
-                                                className="w-full bg-obsidian text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer text-center"
+                                                className="w-full bg-obsidian text-gold font-jakarta font-bold py-3 px-3 text-xs sm:text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer text-center"
                                             >
                                                 Contactar
                                             </Link>
@@ -657,7 +659,7 @@ const ProyectoDetail = () => {
                                                 href={whatsappHref}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="w-full bg-obsidian/90 text-gold font-jakarta font-bold py-3 px-4 text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer text-center inline-flex items-center justify-center gap-2"
+                                                className="w-full bg-obsidian/90 text-gold font-jakarta font-bold py-3 px-3 text-xs sm:text-sm tracking-wider uppercase hover:bg-obsidian-light transition-colors shadow-md rounded-xl cursor-pointer text-center inline-flex items-center justify-center gap-2"
                                             >
                                                 <MessageCircle className="h-4 w-4" />
                                                 WhatsApp
