@@ -13,6 +13,7 @@ import {
     uniqueTipologias,
 } from '../lib/proyectoHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { useSplashWhileLoading } from '../components/RouteSplash';
 
 const LABEL_CLASS =
     'block text-gold text-[10px] font-jakarta font-semibold uppercase tracking-widest mb-1.5 pl-1';
@@ -79,6 +80,7 @@ const FilterSelect = ({ label, value, onChange, children }) => (
 const ProyectosPage = () => {
     const [proyectos, setProyectos] = useState([]);
     const [loading, setLoading] = useState(true);
+    useSplashWhileLoading(loading);
     const [error, setError] = useState(null);
     const [searchParams, setSearchParams] = useSearchParams();
 

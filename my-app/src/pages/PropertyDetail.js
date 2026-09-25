@@ -22,6 +22,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { PROPERTY_DETAIL_SELECT, PUBLIC_ESTADOS, getEstadoBadgeClasses, formatEstadoLabel } from '../lib/propertyHelpers';
 import { propertyInquiryWhatsApp } from '../constants/contact';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { useSplashWhileLoading } from '../components/RouteSplash';
 import { useUfValue } from '../hooks/useUfValue';
 import { formatClp } from '../services/ufService';
 import LocationMap from '../components/LocationMap';
@@ -33,6 +34,7 @@ const PropertyDetail = () => {
     const { valor: ufValor } = useUfValue();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
+    useSplashWhileLoading(loading);
     const [fetchError, setFetchError] = useState(null);
     const [activeImage, setActiveImage] = useState(0);
     const [lightboxOpen, setLightboxOpen] = useState(false);

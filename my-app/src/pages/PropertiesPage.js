@@ -8,6 +8,7 @@ import SectionHeader from '../components/SectionHeader';
 import Pagination from '../components/Pagination';
 import { PROPERTY_LIST_SELECT, PUBLIC_ESTADOS } from '../lib/propertyHelpers';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { useSplashWhileLoading } from '../components/RouteSplash';
 import { useUrlPagination, withParam } from '../hooks/useUrlPagination';
 
 const PAGE_SIZE = 12;
@@ -49,6 +50,7 @@ const SORT_SELECT_CLASS =
 const PropertiesPage = ({ operationType }) => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
+    useSplashWhileLoading(loading);
     const [error, setError] = useState(null);
     const [title, setTitle] = useState('');
     const [searchParams, setSearchParams] = useSearchParams();

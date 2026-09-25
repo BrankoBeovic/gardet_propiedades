@@ -4,6 +4,7 @@ import { AuthProvider } from './auth/AuthProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import RouteSplash from './components/RouteSplash';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -86,6 +87,7 @@ function App() {
     <AuthProvider>
       <Router>
         <ScrollToTop />
+        <RouteSplash />
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-grow">

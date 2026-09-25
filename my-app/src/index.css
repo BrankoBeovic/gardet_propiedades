@@ -398,3 +398,44 @@
   animation: snFadeSoft 0.8s ease both;
   animation-delay: calc(var(--sn-delay, 0) * 1ms);
 }
+
+/* Route splash (brand overlay shown on every page change) */
+@keyframes routeSplashRise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes routeSplashLine {
+  from { width: 0; }
+  to { width: 120px; }
+}
+
+.route-splash-word {
+  opacity: 0;
+  animation: routeSplashRise 0.6s ease both;
+}
+
+.route-splash-word-2 {
+  animation-delay: 0.15s;
+}
+
+.route-splash-line {
+  height: 1px;
+  width: 0;
+  background: linear-gradient(90deg, transparent, #C5A262, transparent);
+  animation: routeSplashLine 1.1s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-splash-word,
+  .route-splash-line {
+    animation-duration: 0.01ms;
+  }
+}
+
+/* Hold page entrance animations at their first frame while the splash covers the page;
+   they start when the splash begins fading out (class toggled by RouteSplash). */
+html.route-splash-active main,
+html.route-splash-active main * {
+  animation-play-state: paused !important;
+}

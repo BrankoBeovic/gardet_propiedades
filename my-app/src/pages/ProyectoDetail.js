@@ -36,6 +36,7 @@ import {
 } from '../lib/proyectoHelpers';
 import { projectInquiryWhatsApp } from '../constants/contact';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
+import { useSplashWhileLoading } from '../components/RouteSplash';
 import { useUfValue } from '../hooks/useUfValue';
 import { formatClp } from '../services/ufService';
 import LocationMap from '../components/LocationMap';
@@ -181,6 +182,7 @@ const ProyectoDetail = () => {
     const { valor: ufValor } = useUfValue();
     const [proyecto, setProyecto] = useState(null);
     const [loading, setLoading] = useState(true);
+    useSplashWhileLoading(loading);
     const [fetchError, setFetchError] = useState(null);
     const [activeImage, setActiveImage] = useState(0);
     const [lightboxOpen, setLightboxOpen] = useState(false);
